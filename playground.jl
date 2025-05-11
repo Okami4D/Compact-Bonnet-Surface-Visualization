@@ -7,8 +7,8 @@ ang = Observable(1.01 * pi)
 
 ax = Axis3(
     fig[1, 1], 
-    aspect = :equal, 
-    perspectiveness = 0.8, 
+    aspect = :data, 
+    perspectiveness = 0.6, 
     clip=false
 )
 
@@ -18,8 +18,8 @@ hidespines!(ax)
 activeMesh = []
 
 # Generate Mesh 
-activeMesh = createEnneper(5, 40)
-mesh!(ax, activeMesh, specular = 0.4, diffuse = 0.7)
+activeMesh = createSphere(1, 70)
+mesh!(ax, activeMesh, specular = 1, diffuse = 1)
 
 
 # Setup the Buttons
@@ -34,20 +34,20 @@ buttons = buttongrid[1, 1:4] = [
 on(buttons[1].clicks) do b
     empty!(ax)
     mesh!(ax, activeMesh, specular = 0.4, diffuse = 0.7)
-    fig
+    
 end
 on(buttons[2].clicks) do b
     empty!(ax)
     wireframe!(ax, activeMesh, linewidth = 0.5)
-    fig
+    
 end
 on(buttons[3].clicks) do b
-    save("output.png", fig, size = (1920, 1080))
-    fig
+    save("output.png", fig, update = false)
+    
 end
 on(buttons[4].clicks) do b
     save("output.obj", hel)
-    fig
+    
 end
 
 fig
