@@ -10,7 +10,7 @@ This method generates a mesh from a set of points
 and a resolution. It creates a mesh of triangles assuming
 that all points are given in the order of a plane.
 =#
-function generatePlanarBasedMesh(points, resolution = 100)
+function generatePlanarBasedMesh(points, resolution = 100, invertNormals = false)
     #= 
     Generate a list of faces, which consist of triangles whose vertecies 
     are specified by three indices in an array of type NgonFace.
@@ -20,9 +20,22 @@ function generatePlanarBasedMesh(points, resolution = 100)
 
     for i in 1:resolution-1, j in 1:resolution-1
         idx = (j - 1) * resolution + i
-        push!(faceList, NgonFace{3, Int64}([idx + 1, idx + resolution, idx + resolution + 1]))
-        push!(faceList, NgonFace{3, Int64}([idx, idx + resolution, idx + 1]))
-        
+
+        p1 = idx
+        p2 = idx + resolution
+        p3 = idx + 1
+        p4 = idx + resolution + 1
+
+        if invertNormals
+            push!(faceList, NgonFace{3, Int64}([p1, p3, p2]))
+            push!(faceList, NgonFace{3, Int64}([p2, p3, p4]))
+        else
+            push!(faceList, NgonFace{3, Int64}([p1, p2, p3]))
+            push!(faceList, NgonFace{3, Int64}([p3, p2, p4]))
+        end
+
+
+
     end
 
     #Calculate the Face Normals as additional information for lighting etc.
@@ -51,7 +64,7 @@ This method generates a mesh given a set of parametric functions
 Keep in mind that u and v must be of the same length
     - resolution: number of sampling points in each direction
 =#
-function createParametricSurface(xfunc, yfunc, zfunc, u, v)
+function createParametricSurface(xfunc, yfunc, zfunc, u, v, invertNormals = false)
     if length(u) != length(v)
         throw(ArgumentError("u and v must have the same length for a square grid"))
     end
@@ -66,7 +79,7 @@ function createParametricSurface(xfunc, yfunc, zfunc, u, v)
         )
         push!(points, p1)
     end
-    return generatePlanarBasedMesh(points, length(u))
+    return generatePlanarBasedMesh(points, length(u), invertNormals)
 end
 
 
@@ -79,6 +92,7 @@ List of Objects created:
     - Plane
     - Sphere
     - Helicoid
+    - Torus
 =#
 
 
@@ -131,6 +145,70 @@ function createHelicoid(a, b, domain = 20, resolution = 100)
     y(u, v) = a*u*sin(v)
     z(u, v) = b*v
     return createParametricSurface(x, y, z, u, v)
+end
+
+#=
+Generate a Torus with parameters r and R
+    - r: Small Circle raidus - thickness
+    - r: big Radius
+    - domain: range of u and v
+    - resolution: number of sampling points in each direction
+=#
+function createTorus(r, R, domain = 2*pi, resolution = 100)
+    u = range(0, domain, length=resolution)
+    v = range(0, domain, length=resolution)
+
+    x(u, v) = (r*cos(u) + R) * cos(v)
+    y(u, v) = (r*cos(u) + R) * sin(v)
+    z(u, v) = r*sin(u)
+    return createParametricSurface(x, y, z, u, v, true)
+end
+
+#=
+Generate an Enneper surface
+    - domain: range of u and v
+    - resolution: number of sampling points in each direction
+=#
+function createEnneper(domain = 5, resolution = 100)
+    u = range(-domain, domain, length=resolution)
+    v = range(-domain, domain, length=resolution)
+
+    x(u, v) = u - (1/3) * u^3 + u * v^2
+    y(u, v) = -v + (1/3) * v^3 - v * u^2
+    z(u, v) = (u^2 - v^2)
+    return createParametricSurface(x, y, z, u, v, false)
+end
+
+# TODO: Add a function to create a Wente surface
+function createWente(theta, domain = 5, resolution = 100)
+    u = range(-domain, domain, length=resolution)
+    v = range(-domain, domain, length=resolution)
+
+    H = 1/2
+    thetaBar = (65.35 * pi) / 180
+
+    k = sin(theta)
+    kbar = sin(thetaBar)
+    gamma = sqrt(tan(theta))
+    gammabar = sqrt(tan(thetaBar))
+
+    alpha = sqrt((4 * H * sin(2 * thetaBar))/(sin(2 * (theta + thetabar))))
+    alphabar = sqrt((4 * H * sin(2 * theta))/(sin(2 * (theta + thetabar))))
+
+    b = - (4 * H * sin(2 * theta) * cos( 2 * thetaBar))/ (sin(2 * (theta + thetaBar)))
+    p = (4 * H * sin(2 * theta) * sin(2 * thetaBar))/(sin(2 * (theta + thetaBar)))
+
+    Gamma = gamma * gammabar
+
+    Z(u, v) = (sqrt(2) * ((( alphabar^2 - b)(gamma * cos(u))^2 + p) * gammabar *  cos(v) - (p * (gamma * cos(u))^2 + alphabar^2 + b) * gamma * cos(u))) / (( sqrt(H) * alphabar^2) * ((1 - Gamma * cos(u)*cos(v)) * sqrt(p - 2 * b * (gamma * cos(u))^2 - p * (gamma * cos(u))^4)))
+    
+
+
+
+    x(u, v) = u - (1/3) * u^3 + u * v^2
+    y(u, v) = -v + (1/3) * v^3 - v * u^2
+    z(u, v) = (u^2 - v^2)
+    return createParametricSurface(x, y, z, u, v, false)
 end
 
 #-------------------------------------------------------

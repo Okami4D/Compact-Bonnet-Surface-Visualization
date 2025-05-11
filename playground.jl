@@ -7,7 +7,7 @@ ang = Observable(1.01 * pi)
 
 ax = Axis3(
     fig[1, 1], 
-    aspect = :data, 
+    aspect = (1, 1, 1), 
     perspectiveness = 0.8, 
     clip=false
 )
@@ -16,6 +16,11 @@ hidedecorations!(ax)
 hidespines!(ax)
 
 activeMesh = []
+
+# Generate Mesh 
+activeMesh = createEnneper(50, 100)
+mesh!(ax, activeMesh, specular = 0.4, diffuse = 0.7)
+
 
 # Setup the Buttons
 fig[2, 1] = buttongrid = GridLayout(tellwidth = false)
@@ -37,21 +42,15 @@ on(buttons[2].clicks) do b
     fig
 end
 on(buttons[3].clicks) do b
-    save("helicoid.png", fig, size = (1920, 1080))
+    save("output.png", fig, size = (1920, 1080))
+    fig
 end
 on(buttons[4].clicks) do b
-
-    save("helicoid.obj", hel)
+    save("output.obj", hel)
+    fig
 end
 
-
-
-
-# Generate Mesh 
-activeMesh = createHelicoid(5, 1, 6.28, 35)
-mesh!(ax, activeMesh, specular = 0.4, diffuse = 0.7)
 fig
-
 #=
 #Rotating Camera around center
 fps = 60
