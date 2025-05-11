@@ -128,7 +128,7 @@ function createSphere(r, resolution = 100)
     x(u, v) = r*sin(v)*cos(u)
     y(u, v) = r*sin(v)*sin(u)
     z(u, v) = r*cos(v)
-    return createParametricSurface(x, y, z, u, v)
+    return createParametricSurface(x, y, z, u, v, true)
 end
 
 #=
@@ -158,10 +158,10 @@ function createTorus(r, R, domain = 2*pi, resolution = 100)
     u = range(0, domain, length=resolution)
     v = range(0, domain, length=resolution)
 
-    x(u, v) = (r*cos(u) + R) * cos(v)
-    y(u, v) = (r*cos(u) + R) * sin(v)
-    z(u, v) = r*sin(u)
-    return createParametricSurface(x, y, z, u, v, true)
+    x(u, v) = (r*sin(u) + R) * cos(v)
+    y(u, v) = (r*sin(u) + R) * sin(v)
+    z(u, v) = r*cos(u)
+    return createParametricSurface(x, y, z, u, v, false)
 end
 
 #=

@@ -7,7 +7,7 @@ ang = Observable(1.01 * pi)
 
 ax = Axis3(
     fig[1, 1], 
-    aspect = (1, 1, 1), 
+    aspect = :equal, 
     perspectiveness = 0.8, 
     clip=false
 )
@@ -18,7 +18,7 @@ hidespines!(ax)
 activeMesh = []
 
 # Generate Mesh 
-activeMesh = createEnneper(50, 100)
+activeMesh = createEnneper(5, 40)
 mesh!(ax, activeMesh, specular = 0.4, diffuse = 0.7)
 
 
