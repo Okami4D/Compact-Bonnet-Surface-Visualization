@@ -1,6 +1,7 @@
 using GLMakie
 using StaticArrays
 using GeometryBasics
+using Integrals
 using FileIO
 using MeshIO
 
@@ -180,9 +181,9 @@ function createEnneper(domain = 5, resolution = 100)
 end
 
 # TODO: Add a function to create a Wente surface
-function createWente(theta, domain = 5, resolution = 100)
-    u = range(-domain, domain, length=resolution)
-    v = range(-domain, domain, length=resolution)
+function createWente(theta, domainU = 2.761094, domainV = 3.58655, resolution = 40)
+    u_ = range(-pi /2, domainU, length=resolution)
+    v_ = range(-pi, domainV, length=resolution)
 
     H = 1/2
     thetaBar = (65.35 * pi) / 180
@@ -192,23 +193,26 @@ function createWente(theta, domain = 5, resolution = 100)
     gamma = sqrt(tan(theta))
     gammabar = sqrt(tan(thetaBar))
 
-    alpha = sqrt((4 * H * sin(2 * thetaBar))/(sin(2 * (theta + thetabar))))
-    alphabar = sqrt((4 * H * sin(2 * theta))/(sin(2 * (theta + thetabar))))
+    alpha = sqrt((4 * H * sin(2 * thetaBar))/(sin(2 * (theta + thetaBar))))
+    alphabar = sqrt((4 * H * sin(2 * theta))/(sin(2 * (theta + thetaBar))))
 
     b = - (4 * H * sin(2 * theta) * cos( 2 * thetaBar))/ (sin(2 * (theta + thetaBar)))
     p = (4 * H * sin(2 * theta) * sin(2 * thetaBar))/(sin(2 * (theta + thetaBar)))
 
     Gamma = gamma * gammabar
 
-    Z(u, v) = (sqrt(2) * ((( alphabar^2 - b)(gamma * cos(u))^2 + p) * gammabar *  cos(v) - (p * (gamma * cos(u))^2 + alphabar^2 + b) * gamma * cos(u))) / (( sqrt(H) * alphabar^2) * ((1 - Gamma * cos(u)*cos(v)) * sqrt(p - 2 * b * (gamma * cos(u))^2 - p * (gamma * cos(u))^4)))
+    Z(u, v) = (sqrt(2) * ((( alphabar^2 - b)*(gamma * cos(u))^2 + p) * gammabar *  cos(v) - (p * (gamma * cos(u))^2 + alphabar^2 + b) * gamma * cos(u))) / (( sqrt(H) * alphabar^2) * ((1 - Gamma * cos(u)*cos(v)) * sqrt(p - 2 * b * (gamma * cos(u))^2 - p * (gamma * cos(u))^4)))
     
+    w(u) = (1/alpha) * 2 * sqrt(H) * solve(IntegralProblem((t, p) -> (1 + (Gamma * cos(t))^2)/((1 - (Gamma * cos(t))^2) * sqrt(1 - (k * sin(t))^2)), (0.0, u)), QuadGKJL()).u
 
+    j(u) = atan((tan(u) * alpha) * sqrt(1 - k^2 * sin(u)^2 )/(2 * sqrt(H))) * ceil(trunc(2*u / pi)/2) * pi
 
+    I(v) = solve(IntegralProblem((t, p) -> (1 - 2 * (kbar * sin(t))^2)/(sqrt(1 - (kbar * sin(t))^2)), (0.0, v)), QuadGKJL()).u
 
-    x(u, v) = u - (1/3) * u^3 + u * v^2
-    y(u, v) = -v + (1/3) * v^3 - v * u^2
-    z(u, v) = (u^2 - v^2)
-    return createParametricSurface(x, y, z, u, v, false)
+    x(u, v) = Z(u, v) * cos(w(u) - j(u)) + cos(w(u)/2 * H)
+    y(u, v) = Z(u, v) * sin(w(u) - j(u)) + sin( w(u)/2 * H)
+    z(u, v) = 1/(alphabar * sqrt(H)) * ((2 * Gamma * cos(u) * sin(v) * sqrt(1 - (kbar * sin(v))^2 ))/(1 - Gamma * cos(u) * cos(v)) .+ (1/gammabar) * I(v))
+    return createParametricSurface(x, y, z, u_, v_, false)
 end
 
 #-------------------------------------------------------

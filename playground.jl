@@ -18,7 +18,7 @@ hidespines!(ax)
 activeMesh = []
 
 # Generate Mesh 
-activeMesh = createSphere(1, 70)
+activeMesh = createWente((12.7898 * pi) / 180)
 mesh!(ax, activeMesh, specular = 1, diffuse = 1)
 
 
@@ -38,7 +38,7 @@ on(buttons[1].clicks) do b
 end
 on(buttons[2].clicks) do b
     empty!(ax)
-    wireframe!(ax, activeMesh, linewidth = 0.5)
+    wireframe!(activeMesh)
     
 end
 on(buttons[3].clicks) do b
