@@ -15,11 +15,19 @@ ax = Axis3(
 hidedecorations!(ax)
 hidespines!(ax)
 
-activeMesh = []
 
 # Generate Mesh 
-activeMesh = createWente((12.7898 * pi) / 180)
-mesh!(ax, activeMesh, specular = 1, diffuse = 1)
+resolution = 100
+x = LinRange(0, 2π, resolution)
+y = LinRange(0, 2π, resolution)
+#activeParametrization = parametricFuncWente(9.9285)
+activeParametrization = parametricFuncKleinBottle()
+activeMesh = createParametricMesh(activeParametrization, x, y)
+
+plotParametricSurface(activeParametrization, x, y; 
+        specular = 0.4, 
+        diffuse = 0.7
+) 
 
 
 # Setup the Buttons
@@ -33,32 +41,20 @@ buttons = buttongrid[1, 1:4] = [
 
 on(buttons[1].clicks) do b
     empty!(ax)
-    mesh!(ax, activeMesh, specular = 0.4, diffuse = 0.7)
-    
+    plotParametricSurface(activeParametrization, x, y; 
+        specular = 0.4, 
+        diffuse = 0.7
+    )    
 end
 on(buttons[2].clicks) do b
     empty!(ax)
-    wireframe!(activeMesh)
-    
+    plotParametricWireframe(activeParametrization, x, y)
 end
 on(buttons[3].clicks) do b
     save("output.png", fig, update = false)
-    
 end
 on(buttons[4].clicks) do b
-    save("output.obj", hel)
-    
+    save("output.obj", activeMesh)
 end
 
 fig
-#=
-#Rotating Camera around center
-fps = 60
-nframes = 1200
-
-for i in 1:nframes
-    ang[] = ang[] + 0.01
-    sleep(1 / fps)
-end
-#save("helicoid.obj", hel)
-=#

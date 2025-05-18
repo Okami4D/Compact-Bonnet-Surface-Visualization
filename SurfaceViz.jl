@@ -5,186 +5,315 @@ using Integrals
 using FileIO
 using MeshIO
 
-#-------------------------------------------------------
-#=
-This method generates a mesh from a set of points
-and a resolution. It creates a mesh of triangles assuming
-that all points are given in the order of a plane.
-=#
-function generatePlanarBasedMesh(points, resolution = 100, invertNormals = false)
+
+"""
+    plotParametricSurface(f, x, y; kwargs...)
+
+Plots a parametric surface defined by the function `f(u, v)`, where `x` and `y` are ranges or vectors specifying the parameter domains for `u` and `v`. The function `f` should return a 3-element vector or tuple representing the (x, y, z) coordinates.
+
+# Arguments
+- `f`: Function of two variables `(u, v)` returning a 3-element vector or tuple.
+- `x`: Range or vector for the first parameter.
+- `y`: Range or vector for the second parameter.
+- `kwargs...`: Additional keyword arguments passed to `surface`.
+
+# Example
+```julia
+plotParametricSurface((u, v) -> [u, v, u^2 - v^2], -1:0.1:1, -1:0.1:1)
+```
+"""
+function plotParametricSurface(f, x, y; kwargs...)
+    surface!([[f(i,j)[k] for i in x, j in y] for k in 1:3]...; kwargs...)
+end
+
+
+"""
+    plotParametricWireframe(f, x, y; kwargs...)
+
+Plots a wireframe of a parametric surface defined by the function `f(u, v)`, where `x` and `y` are ranges or vectors specifying the parameter domains for `u` and `v`. The function `f` should return a 3-element vector or tuple representing the (x, y, z) coordinates.
+
+# Arguments
+- `f`: Function of two variables `(u, v)` returning a 3-element vector or tuple.
+- `x`: Range or vector for the first parameter.
+- `y`: Range or vector for the second parameter.
+- `kwargs...`: Additional keyword arguments passed to `wireframe!`.
+
+# Example
+```julia
+plotParametricWireframe((u, v) -> [u, v, sin(u)*cos(v)], 0:0.1:2π, 0:0.1:2π)
+```
+"""
+function plotParametricWireframe(f, x, y; kwargs...)
+    wireframe!([[f(i,j)[k] for i in x, j in y] for k in 1:3]...; kwargs...)
+end
+
+
+"""
+    generatePlanarBasedMesh(points, x, y, invertNormals=false)
+
+Generates a mesh from a set of 3D points arranged in a grid defined by parameter ranges `x` and `y`. The mesh is constructed by connecting the points in a planar order, forming quadrilateral faces. Optionally, normals can be inverted.
+
+# Arguments
+- `points`: Vector of 3D points (e.g., `Point3f`) ordered according to the grid.
+- `x`: Range or vector for the first parameter (number of columns).
+- `y`: Range or vector for the second parameter (number of rows).
+- `invertNormals`: (optional) If `true`, inverts the face normals.
+
+# Returns
+A `GeometryBasics.Mesh` object containing the mesh, normals, and color data.
+"""
+function generatePlanarBasedMesh(points, x, y, generateNormals = false)
     #= 
     Generate a list of faces, which consist of triangles whose vertecies 
     are specified by three indices in an array of type NgonFace.
     The indices are chosen in the natural order given by a plane.
     =#
-    faceList = NgonFace{3, Int64}[]
 
-    for i in 1:resolution-1, j in 1:resolution-1
-        idx = (j - 1) * resolution + i
+    nx = length(x)
+    ny = length(y)
 
-        p1 = idx
-        p2 = idx + resolution
-        p3 = idx + 1
-        p4 = idx + resolution + 1
-
-        if invertNormals
-            push!(faceList, NgonFace{3, Int64}([p1, p3, p2]))
-            push!(faceList, NgonFace{3, Int64}([p2, p3, p4]))
-        else
-            push!(faceList, NgonFace{3, Int64}([p1, p2, p3]))
-            push!(faceList, NgonFace{3, Int64}([p3, p2, p4]))
-        end
-
-
-
-    end
+    faces = [ 
+        QuadFace(
+            ((i +j*ny),
+            (i+1 + j*ny),
+            (i + 1 + (j+1)*ny),
+            (i+(j+1)*ny))
+        ) 
+        for i in 1:(ny-1) for j in 0:(nx-2)
+    ]
 
     #Calculate the Face Normals as additional information for lighting etc.
-    normalsCalc = face_normals(points, faceList)
-
-    #Output the entirty of information so far as a mesh object from GeometryBasics to bundle it all together
-    outputMesh = GeometryBasics.Mesh(
-        points,
-        faceList,
-        normal = normalsCalc,
-        #We hardcode the color for now, but this could be changed to a gradient or something else
-        color = [v[3] for v in points]
-    )
-
-    return outputMesh
-end
-
-#=
-This method generates a mesh given a set of parametric functions
-    - xfunc: function for x coordinate
-    - yfunc: function for y coordinate
-    - zfunc: function for z coordinate
-    - u: list of u values
-    - v: list of v values
-
-Keep in mind that u and v must be of the same length
-    - resolution: number of sampling points in each direction
-=#
-function createParametricSurface(xfunc, yfunc, zfunc, u, v, invertNormals = false)
-    if length(u) != length(v)
-        throw(ArgumentError("u and v must have the same length for a square grid"))
-    end
-
-    points = Point3f[]
-    for uu in u, vv in v
-        # Compute vertex indices (row-major order)
-        p1 = Point3f(
-            xfunc(uu, vv), 
-            yfunc(uu, vv), 
-            zfunc(uu, vv)
+    if generateNormals 
+        normalsCalc = face_normals(points, faces)
+        return GeometryBasics.Mesh(
+            points,
+            faces,
+            normal = normalsCalc,
         )
-        push!(points, p1)
+    else
+        return GeometryBasics.Mesh(
+            points,
+            faces,
+        )
     end
-    return generatePlanarBasedMesh(points, length(u), invertNormals)
 end
+
+
+"""
+    createParametricMesh(f, x, y; invertNormals=false)
+
+Creates a mesh for a parametric surface defined by the function `f(u, v)`, where `x` and `y` are ranges or vectors specifying the parameter domains. The function `f` should return a 3-element vector or tuple representing the (x, y, z) coordinates for each `(u, v)`.
+
+# Arguments
+- `f`: Function of two variables `(u, v)` returning a 3-element vector or tuple.
+- `x`: Range or vector for the first parameter.
+- `y`: Range or vector for the second parameter.
+- `invertNormals`: (optional) If `true`, inverts the face normals.
+
+# Returns
+A `GeometryBasics.Mesh` object representing the parametric surface.
+"""
+function createParametricMesh(f, x, y; invertNormals = false)
+    points = Point3f[]
+    for u in x, v in y
+        p = Point3f(
+            f(u, v)[1],
+            f(u, v)[2],
+            f(u, v)[3] 
+        )
+        push!(points, p)
+    end
+    return generatePlanarBasedMesh(points, x, y, invertNormals)
+end
+
+
 
 
 #-------------------------------------------------------
 #=
-We define some functions to create some basic shapes for testing
-and debugging purposes.
-
-List of Objects created:
-    - Plane
-    - Sphere
-    - Helicoid
-    - Torus
+We define some basic embedding Functions which can be used in the above parametric plotting functions
 =#
+"""
+    parametricFuncPlane()
 
+Returns a parametric function for a plane in 3D.
 
-#=
-Generate a plane with dimensions 2a x 2b
-    - a: half the width of the plane
-    - b: half the height of the plane
-    - resolution: number of sampling points in each direction
-=#
-function createPlane(a, b, resolution=100)
+# Returns
+A function `(x, y) -> (x, y, 0)` representing the xy-plane.
 
-    u = range(-a, a, length=resolution)
-    v = range(-b, b, length=resolution)
+# Example
+```julia
+plane = parametricFuncPlane()
+x = -1:0.1:1
+y = -1:0.1:1
+# Use plane(x, y) in your plotting or mesh function
+```
+"""
+function parametricFuncPlane()
+    return (x, y) -> (x, y, 0)
+end
 
-    x(u, v) = u
-    y(u, v) = v
-    z(u, v) = 0
+"""
+    parametricFuncSphere(r)
 
-    return createParametricSurface(x, y, z, u, v)
+Returns a parametric function for a sphere of radius `r`.
+
+# Arguments
+- `r`: Radius of the sphere.
+
+# Recommended Domains
+For full coverage, use:
+- `u ∈ [0, 2π]`
+- `v ∈ [0, π]`
+
+# Returns
+A function `(u, v) -> (x, y, z)` representing the sphere.
+
+# Example
+```julia
+sphere = parametricFuncSphere(1.0)
+u = range(0, 2π, length=100)
+v = range(0, π, length=100)
+# Use sphere(u, v) in your plotting or mesh function
+```
+"""
+function parametricFuncSphere(r)
+    return (u, v) -> (
+        r * sin(v) * cos(u),
+        r * sin(v) * sin(u),
+        r * cos(v)
+    )
+end
+
+"""
+    parametricFuncHelicoid(a, b)
+
+Returns a parametric function for a helicoid surface.
+
+# Arguments
+- `a`: Radius scaling parameter.
+- `b`: Height scaling parameter.
+
+# Recommended Domains
+For typical visualization, use:
+- `u ∈ [-1, 1]`
+- `v ∈ [0, 4π]`
+
+# Returns
+A function `(u, v) -> (x, y, z)` representing the helicoid.
+
+# Example
+```julia
+helicoid = parametricFuncHelicoid(1.0, 0.2)
+u = range(-1, 1, length=100)
+v = range(0, 4π, length=100)
+# Use helicoid(u, v) in your plotting or mesh function
+```
+"""
+function parametricFuncHelicoid(a, b)
+    return (u, v) -> (
+        a * u * cos(v),
+        a * u * sin(v),
+        b * v
+    )
+end
+
+"""
+    parametricFuncTorus(r, R)
+
+Returns a parametric function for a torus with minor radius `r` and major radius `R`.
+
+# Arguments
+- `r`: Minor (tube) radius.
+- `R`: Major (center) radius.
+
+# Recommended Domains
+For full coverage, use:
+- `u ∈ [0, 2π]`
+- `v ∈ [0, 2π]`
+
+# Returns
+A function `(u, v) -> (x, y, z)` representing the torus.
+
+# Example
+```julia
+torus = parametricFuncTorus(0.3, 1.0)
+u = range(0, 2π, length=100)
+v = range(0, 2π, length=100)
+# Use torus(u, v) in your plotting or mesh function
+```
+"""
+function parametricFuncTorus(r, R, domain = 2*pi, resolution = 100)
+    return (u, v) -> (
+        (r * cos(u) + R) * cos(v),
+        (r * cos(u) + R) * sin(v),
+        r * sin(u)
+    )
+end
+
+"""
+    parametricFuncEnneper()
+
+Returns a parametric function for the Enneper minimal surface.
+
+# Recommended Domains
+For typical visualization, use:
+- `u ∈ [-2, 2]`
+- `v ∈ [-2, 2]`
+
+# Returns
+A function `(u, v) -> (x, y, z)` representing the Enneper surface.
+
+# Example
+```julia
+enneper = parametricFuncEnneper()
+u = range(-2, 2, length=100)
+v = range(-2, 2, length=100)
+# Use enneper(u, v) in your plotting or mesh function
+```
+"""
+function parametricFuncEnneper()
+    return (u, v) -> (
+        u - (1/3) * u^3 + u * v^2,
+        -v + (1/3) * v^3 - v * u^2,
+        (u^2 - v^2)
+    )
 end
 
 
-#=
-Generate a sphere with radius r
-    - r: radius of the sphere
-    - resolution: number of sampling points in each direction
-=#
-function createSphere(r, resolution = 100)
+"""
+    parametricFuncWente(theta; resolution=100)
 
-    u = range(0, 2π, length=resolution)
-    v = range(0, π, length=resolution)
+Returns a parametric function for the Wente torus surface with parameter `theta`.
 
-    x(u, v) = r*sin(v)*cos(u)
-    y(u, v) = r*sin(v)*sin(u)
-    z(u, v) = r*cos(v)
-    return createParametricSurface(x, y, z, u, v, true)
-end
+# Arguments
+- `theta`: Parameter controlling the geometry of the Wente torus (in radians).
 
-#=
-Generate a helicoid with parameters a and b
-    - a: radius of the helicoid
-    - b: height of the helicoid
-    - resolution: number of sampling points in each direction
-=#
-function createHelicoid(a, b, domain = 20, resolution = 100)
-    u = range(0, domain, length=resolution)
-    v = range(0, domain, length=resolution)
+#Recommended Values
+- `theta = 17.7324` (in degrees) is a common choice for the Wente torus.
+- `theta = 12.7898` (in degrees) is another option.
+- `theta = 21.4807` (in degrees) is also used.
+- `theta = 9.9285` (in degrees) is a less common choice.
+- `theta = 22.8449` (in degrees) is a less common choice.
 
-    x(u, v) = a*u*cos(v)
-    y(u, v) = a*u*sin(v)
-    z(u, v) = b*v
-    return createParametricSurface(x, y, z, u, v)
-end
+# Recommended Domains
+For typical visualization, use:
+- `u ∈ [-π/2, π/4]`
+- `v ∈ [-π, 2π/3]`
 
-#=
-Generate a Torus with parameters r and R
-    - r: Small Circle raidus - thickness
-    - r: big Radius
-    - domain: range of u and v
-    - resolution: number of sampling points in each direction
-=#
-function createTorus(r, R, domain = 2*pi, resolution = 100)
-    u = range(0, domain, length=resolution)
-    v = range(0, domain, length=resolution)
+# Returns
+A function `(u, v) -> (x, y, z)` representing the Wente torus surface, suitable for use with parametric plotting or mesh generation routines.
 
-    x(u, v) = (r*sin(u) + R) * cos(v)
-    y(u, v) = (r*sin(u) + R) * sin(v)
-    z(u, v) = r*cos(u)
-    return createParametricSurface(x, y, z, u, v, false)
-end
-
-#=
-Generate an Enneper surface
-    - domain: range of u and v
-    - resolution: number of sampling points in each direction
-=#
-function createEnneper(domain = 5, resolution = 100)
-    u = range(-domain, domain, length=resolution)
-    v = range(-domain, domain, length=resolution)
-
-    x(u, v) = u - (1/3) * u^3 + u * v^2
-    y(u, v) = -v + (1/3) * v^3 - v * u^2
-    z(u, v) = (u^2 - v^2)
-    return createParametricSurface(x, y, z, u, v, false)
-end
-
-# TODO: Add a function to create a Wente surface
-function createWente(theta, domainU = 2.761094, domainV = 3.58655, resolution = 40)
-    u_ = range(-pi /2, domainU, length=resolution)
-    v_ = range(-pi, domainV, length=resolution)
-
+# Example
+```julia
+wente = parametricFuncWente(1.2)
+u = range(-π/2, π/4, length=100)
+v = range(-π, 2π/3, length=100)
+# Use wente(u, v) in your plotting or mesh function
+```
+"""
+function parametricFuncWente(thetaDeg = 17.7324)
+    theta = thetaDeg * pi / 180
     H = 1/2
     thetaBar = (65.35 * pi) / 180
 
@@ -208,11 +337,43 @@ function createWente(theta, domainU = 2.761094, domainV = 3.58655, resolution = 
     j(u) = atan((tan(u) * alpha) * sqrt(1 - k^2 * sin(u)^2 )/(2 * sqrt(H))) * ceil(trunc(2*u / pi)/2) * pi
 
     I(v) = solve(IntegralProblem((t, p) -> (1 - 2 * (kbar * sin(t))^2)/(sqrt(1 - (kbar * sin(t))^2)), (0.0, v)), QuadGKJL()).u
-
+    
     x(u, v) = Z(u, v) * cos(w(u) - j(u)) + cos(w(u)/2 * H)
     y(u, v) = Z(u, v) * sin(w(u) - j(u)) + sin( w(u)/2 * H)
     z(u, v) = 1/(alphabar * sqrt(H)) * ((2 * Gamma * cos(u) * sin(v) * sqrt(1 - (kbar * sin(v))^2 ))/(1 - Gamma * cos(u) * cos(v)) .+ (1/gammabar) * I(v))
-    return createParametricSurface(x, y, z, u_, v_, false)
+    return (u, v) -> (x(u, v), y(u, v), z(u, v))
 end
 
-#-------------------------------------------------------
+"""
+    parametricFuncKleinBottle(a=2.0, b=1.0)
+
+Returns a parametric function for the Klein bottle surface.
+
+# Arguments
+- `a`: (optional) Main radius of the tube (default: 2.0).
+- `b`: (optional) Radius of the tube (default: 1.0).
+
+# Recommended Domains
+For typical visualization, use:
+- `u ∈ [0, 2π]`
+- `v ∈ [0, 2π]`
+
+# Returns
+A function `(u, v) -> (x, y, z)` representing the Klein bottle.
+
+# Example
+```julia
+klein = parametricFuncKleinBottle()
+u = range(0, 2π, length=100)
+v = range(0, 2π, length=100)
+# Use klein(u, v) in your plotting or mesh function
+```
+"""
+function parametricFuncKleinBottle(a=2.0, b=1.0)
+    return (u, v) -> begin
+        x = (a + b * cos(u/2) * sin(v) - b * sin(u/2) * sin(2v)) * cos(u)
+        y = (a + b * cos(u/2) * sin(v) - b * sin(u/2) * sin(2v)) * sin(u)
+        z = b * sin(u/2) * sin(v) + b * cos(u/2) * sin(2v)
+        (x, y, z)
+    end
+end
