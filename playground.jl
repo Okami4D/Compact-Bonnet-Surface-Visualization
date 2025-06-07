@@ -18,10 +18,11 @@ hidespines!(ax)
 
 # Generate Mesh 
 resolution = 100
-x = LinRange(0, 2π, resolution)
-y = LinRange(0, 2π, resolution)
+x = LinRange(0, 2 * pi, resolution)
+y = LinRange(0, 2 * pi, resolution)
 #activeParametrization = parametricFuncWente(9.9285)
 activeParametrization = parametricFuncKleinBottle()
+#activeParametrization = parametricFuncEnneper()
 activeMesh = createParametricMesh(activeParametrization, x, y)
 
 plotParametricSurface(activeParametrization, x, y; 
