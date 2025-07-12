@@ -3,25 +3,21 @@ using Integrals
 using Quaternions
 using FiniteDifferences
 using Zygote
-using Alert
-include("SurfaceViz.jl")
 
-# Plot Setup
-fig = Figure(size=(1500, 844), scenekw = (lights = [DirectionalLight(RGBf(1, 1, 1), Vec3f(-1, 0, 0))],))
-ang = Observable(1.01 * pi)
+"""
+    integrateForm(A, B, x_0, y_0)
 
-ax = Axis3(
-    fig[1, 1], 
-    aspect = :data, 
-    perspectiveness = 0.6, 
-    clip=false
-)
+Integrates a pair of vector-valued differential forms `A` and `B` over a path from `(x_0, y_0)` to `(x, y)`.
+Assumes the differential form is exact. Returns a function `f(x, y)` giving the immersion at `(x, y)`.
 
-hidedecorations!(ax)
-hidespines!(ax)
+# Arguments
+- `A`: Function `(x, y) -> (a1, a2, a3)` representing the first differential form.
+- `B`: Function `(x, y) -> (b1, b2, b3)` representing the second differential form.
+- `x_0`, `y_0`: Starting point for integration.
 
-#First version of integrating differential forms to obtain the corresponding immersion. Only works under the assumption
-# that the differential form is exact.
+# Returns
+- Function `(x, y) -> [X, Y, Z]` giving the integrated coordinates.
+"""
 function integrateForm(A, B, x_0, y_0)
     function f(x, y)
         gamma = (t) -> (x_0 + t*(x - x_0), y_0 + t*(y - y_0))
@@ -43,6 +39,18 @@ function integrateForm(A, B, x_0, y_0)
     return f
 end
 
+"""
+    numericDifferentials(f)
+
+Computes the numerical partial derivatives of a vector-valued function `f(u, v)` with respect to `u` and `v`
+using automatic differentiation.
+
+# Arguments
+- `f`: Function `(u, v) -> (x, y, z)`.
+
+# Returns
+- Tuple `(fu, fv)` where `fu(u, v)` and `fv(u, v)` are the partial derivatives with respect to `u` and `v`.
+"""
 function numericDifferentials(f)
     #fdm = central_fdm(n, d)  # 5-point stencil, 1st derivative
     
@@ -54,6 +62,17 @@ function numericDifferentials(f)
     return uF, vF
 end
 
+"""
+    convertToQuaternion(f)
+
+Converts a 3D vector-valued function `f(u, v)` to a quaternion-valued function with zero real part.
+
+# Arguments
+- `f`: Function `(u, v) -> (x, y, z)`.
+
+# Returns
+- Function `(u, v) -> Quaternion(0, x, y, z)`.
+"""
 function convertToQuaternion(f)
     return (u, v) -> Quaternions.Quaternion(
         0,
@@ -63,11 +82,35 @@ function convertToQuaternion(f)
     )
 end
 
+"""
+    normalizeFunction(f)
+
+Normalizes the output of a vector-valued function `f(u, v)` to unit length.
+
+# Arguments
+- `f`: Function `(u, v) -> (x, y, z)`.
+
+# Returns
+- Function `(u, v) -> (x', y', z')` where the vector has unit norm.
+"""
 function normalizeFunction(f)
     norm = (u, v) -> sqrt(f(u, v)[1]^2 + f(u, v)[2]^2 + f(u, v)[3]^2)
     return (u, v) -> (f(u, v)[1] / norm(u, v), f(u, v)[2] / norm(u,v), f(u, v)[3] / norm(u,v))
 end
 
+"""
+    generateDualSurface(f; offsetX=0.0, offsetY=0.0)
+
+Generates the dual surface of a parametric surface `f(u, v)` by integrating the normalized differentials.
+Optionally offsets the base point.
+
+# Arguments
+- `f`: Parametric surface function `(u, v) -> (x, y, z)`.
+- `offsetX`, `offsetY`: Optional offsets for the integration base point.
+
+# Returns
+- Function `(u, v) -> (x, y, z)` representing the dual surface.
+"""
 function generateDualSurface(f; offsetX = 0.0, offsetY = 0.0)
     fu, fv = numericDifferentials(f)
 
@@ -80,6 +123,17 @@ function generateDualSurface(f; offsetX = 0.0, offsetY = 0.0)
     return integrateForm(outA, outB, offsetX, offsetY)
 end
 
+"""
+    generateDualSurface(fu, fv)
+
+Generates normalized differential forms from given partial derivatives `fu` and `fv`.
+
+# Arguments
+- `fu`, `fv`: Functions representing partial derivatives with respect to `u` and `v`.
+
+# Returns
+- Tuple `(outA, outB)` of normalized differential forms.
+"""
 function generateDualSurface(fu, fv)
     outA = normalizeFunction(fu)
 
@@ -90,6 +144,19 @@ function generateDualSurface(fu, fv)
     return outA, outB
 end
 
+"""
+    spinTransform(f, lambda)
+
+Applies a quaternionic spin transformation to the surface `f(u, v)` using the quaternion-valued function `lambda(u, v)`.
+Returns the integrated transformed surface.
+
+# Arguments
+- `f`: Parametric surface function `(u, v) -> (x, y, z)`.
+- `lambda`: Function `(u, v) -> Quaternion`.
+
+# Returns
+- Function `(u, v) -> (x, y, z)` representing the transformed surface.
+"""
 function spinTransform(f, lambda)
     uF, vF = numericDifferentials(f)
     df1 = convertToQuaternion(uF)
@@ -104,6 +171,18 @@ function spinTransform(f, lambda)
     return integrateForm(A, B, 0.0, 0.0)
 end
 
+"""
+    spinTransform(uF, vF, lambda)
+
+Applies a quaternionic spin transformation to the differential forms `uF`, `vF` using `lambda(u, v)`.
+
+# Arguments
+- `uF`, `vF`: Functions representing partial derivatives.
+- `lambda`: Function `(u, v) -> Quaternion`.
+
+# Returns
+- Tuple `(uF, vF)` of transformed differential forms.
+"""
 function spinTransform(uF, vF, lambda)
     df1 = convertToQuaternion(uF)
     df2 = convertToQuaternion(vF)
@@ -116,38 +195,3 @@ function spinTransform(uF, vF, lambda)
 
     return uF, vF
 end
-
-f = parametricFuncPlane()
-
-A = 1
-
-fu, fv = numericDifferentials(f)
-df1, df2 = generateDualSurface(fu, fv)
-
-
-lamda1 = (u, v) -> Quaternions.Quaternion(0, A + f(u, v)[1], A + f(u, v)[2], A + f(u, v)[3])
-lamda2 = (u, v) -> Quaternions.Quaternion(0, -A + f(u, v)[1], -A + f(u, v)[2], -A + f(u, v)[3])
-
-
-gu1, gv1 = spinTransform(df1, df2, lamda1)
-gu2, gv2 = spinTransform(df1, df2, lamda2)
-
-g1 = integrateForm(gu1, gv1, 0.0, 0.0)
-g2 = integrateForm(gu2, gv2, 0.0, 0.0)
-
-
-res1 = 100
-
-u1 = LinRange(-2, 2, res1)
-v1 = LinRange(-2, 2, res1)
-
-res2 = 10
-u2 = LinRange(-2, 2, res2)
-v2 = LinRange(-2, 2, res2)
-
-
-plotParametricSurface(f, u1, v1)
-plotParametricWireframe(g1, u2, v2)
-plotParametricWireframe(g2, u2, v2)
-alert("Julia script executed successfully!")
-fig

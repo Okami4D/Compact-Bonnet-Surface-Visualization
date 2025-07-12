@@ -1,8 +1,15 @@
 using GLMakie
-include("SurfaceViz.jl")
+include("Tools/ParametricSurfaceTools.jl")
 
 # Plot Setup
-fig = Figure(size=(1920, 1080), scenekw = (lights = [DirectionalLight(RGBf(1, 1, 1), Vec3f(-1, 0, 0))],))
+fig = Figure(
+    size=(1200, 800), 
+    scenekw = (lights = [
+        DirectionalLight(RGBf(1, 1, 1), 
+        Vec3f(-1, 0, 0))
+    ],
+))
+
 ang = Observable(1.01 * pi)
 
 ax = Axis3(
@@ -25,8 +32,8 @@ activeParametrization = parametricFuncKleinBottle()
 #activeParametrization = parametricFuncEnneper()
 activeMesh = createParametricMesh(activeParametrization, x, y)
 
-plotParametricSurface(activeParametrization, x, y; 
-        specular = 0.4, 
+plotParametricSurface(activeParametrization, x, y;
+        specular = 0.4,
         diffuse = 0.7
 ) 
 
