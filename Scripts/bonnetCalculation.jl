@@ -1,6 +1,6 @@
 using GLMakie
-include("Tools/ParametricSurfaceTools.jl")
-include("Tools/QuaternionicGeometryToolkit.jl")
+include("../Tools/ParametricSurfaceTools.jl")
+include("../Tools/QuaternionicGeometryToolkit.jl")
 
 # Plot Setup
 fig = Figure(size=(1200, 800), scenekw = (lights = [DirectionalLight(RGBf(1, 1, 1), Vec3f(-1, 0, 0))],))

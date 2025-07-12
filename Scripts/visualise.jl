@@ -1,5 +1,5 @@
 using GLMakie
-include("Tools/ParametricSurfaceTools.jl")
+include("../Tools/ParametricSurfaceTools.jl")
 
 # Plot Setup
 fig = Figure(
