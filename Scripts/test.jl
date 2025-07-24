@@ -1,5 +1,5 @@
 using GLMakie
-using EllipticFunctions
+
 include("../Tools/ParametricSurfaceTools.jl")
 include("../Tools/ParametricCurveTools.jl")
 include("../Tools/isothermicCylinderTools.jl")
@@ -21,7 +21,7 @@ ax = Axis3(
 )
 hidedecorations!(ax)
 hidespines!(ax)
-    q
+
 
 tau = 0.5 + 0.3 * im
 omega = findOmegaRhombic(tau)
@@ -44,5 +44,10 @@ w = (v) -> C + (A/pi) * sin(v) - (A/(pi^2)) *cos(v) - (B/(2 * pi)) * sin(2 * v) 
 axisCalc = (x) -> rhombicAxisCalculation(x, omega, tau)
 
 wFunc = (v) -> 0
-rhombicAxisCalculation(0.2, omega, tau)
-numericallySolveRotation(0, wFunc, axisCalc)
+
+curve = (u, v) -> rhombicLatticeCurve(u, v, omega, tau)
+curveQuat = (u, v) -> [curve(u, v)..., 0, 0]
+init = [round(d, digits=20) for d in curveQuat(0.5, 0.5)]
+
+
+numericallySolveRotation(0.01, wFunc, axisCalc, init)

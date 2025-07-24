@@ -54,33 +54,32 @@ end
 
 
 # VERY WIP
-function numericallySolveRotation(v, wFunc, axisCalc)
+function numericallySolveRotation(v, wFunc, axisCalc, Phi0)
     dwFunc = something(gradient(wFunc, v)[1], 0)
     # ========== 2. Define right-hand side quaternion Q(v) ==========
     # Q(v) = sqrt(1 - w'(v)^2) * W1(w(v)) * k
     function Q_rhs(v)
         s = sqrt(1 - (dwFunc^2))
-        wval = wFunc(v)
-        W = axisCalc(wval)
+        W = axisCalc(wFunc(v))
+
         return s * W * Quaternion(0.0, 0.0, 0.0, 1)  # Pure imaginary in k direction
     end
 
     function ODE(du, u, p, t)
-        Q = Q_rhs(t)
-        PHI = Quaternion(u[1], u[2], u[3], u[4])  # Convert to Quaternion
-        dPHI = Q * PHI  # Quaternion multiplication
+        Qf = Q_rhs(t)
+        PHI = Quaternion(u[1], u[2], u[3], u[4])  # Convert to Q.Quaternion
+        dPHI = Qf * PHI  # Q.Quaternion multiplication
         du[1] = dPHI.s
         du[2] = dPHI.v1
         du[3] = dPHI.v2
         du[4] = dPHI.v3
     end
 
-    Phi0 = [0.0, 0.0, 0.0, 1.0]  # Represented as vector: [s, i, j, k]
     vspan = (0.0, 2pi)           # Solve from v = 0 to 2π
 
     prob = ODEProblem(ODE, Phi0, vspan)
-    sol = solve(prob, Tsit5())
-    return Quaternion(sol(v)[1], sol(v)[2], sol(v)[3], sol(v)[4])  # Convert back to Quaternion
+    sol = solve(prob, AitkenNeville())
+    return Quaternion(sol(v)[1], sol(v)[2], sol(v)[3], sol(v)[4])  # Convert back to Q.Quaternion
 end
 
 
