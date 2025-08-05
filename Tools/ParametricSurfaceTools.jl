@@ -127,6 +127,17 @@ function createParametricMesh(f, x, y; invertNormals = false)
 end
 
 
+function rotateFunction(f, angle, axisVector)
+    axis = Quaternion(0, axisVector...)
+    rotQuat = Quaternion(cos(angle/2), 0, 0, 0) + sin(angle/2) * (1/sqrt(axis.s^2 + axis.v1^2 + axis.v2^2 + axis.v3^2)) * axis
+    fRotatedQuaternion = (u, v) -> rotQuat * Quaternion(0, f(u, v)...) * (1/rotQuat)
+    function output(u, v)
+        fRotated = fRotatedQuaternion(u, v)
+        return (fRotated.v1, fRotated.v2, fRotated.v3)
+    end
+    return output
+end
+
 
 
 #-------------------------------------------------------

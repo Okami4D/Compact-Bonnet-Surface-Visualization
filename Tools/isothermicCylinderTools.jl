@@ -1,4 +1,3 @@
-import Quaternions: Quaternion
 
 using Roots
 using Integrals
@@ -7,19 +6,23 @@ using DifferentialEquations
 using Zygote
 using SciMLBase
 
+import Quaternions as Q
+
 include("../Tools/jacboiThetaExtension.jl")
 
-function findOmegaRectangular(tau, n =10)
+function findOmegaRectangular(tau)
     fReal = (omega) -> real(th4prime(omega, tau))
     fImag = (omega) -> imag(th4prime(omega, tau))
-    solReal = Roots.find_zero(fReal, 1)
+    solReal = Roots.find_zero(fReal, 0.7)
+    solImag = Roots.find_zero(fImag, 0.5)
     return solReal
 end
 
-function findOmegaRhombic(tau, n =10)
+function findOmegaRhombic(tau)
     fReal = (omega) -> real(th2prime(omega, tau))
     fImag = (omega) -> imag(th2prime(omega, tau))
-    solReal = Roots.find_zero(fReal, 1)
+    solReal = Roots.find_zero(fReal, 0.7)
+    solImag = Roots.find_zero(fImag, 0.5)
     return solReal
 end
 
@@ -43,29 +46,29 @@ end
 function rectangularAxisCalculation(w, omega, tau)
     val1 = im * th1prime(0, tau)/(2 * th4(omega, tau)) * th4(omega - im * w, tau)/th1(im * w, tau)
     value = val1 * exp((im * w) * (th4prime(omega, tau)/th4(omega, tau))) 
-    return Quaternion(real(value), imag(value), 0, 0)
+    return Q.Quaternion(real(value), imag(value), 0, 0)
 end
 
 function rhombicAxisCalculation(w, omega, tau)
     val1 = im * th1prime(0, tau)/(2 * th2(omega, tau)) * th2(omega - im * w, tau)/th1(im * w, tau)
     value = val1 * exp((im * w) * (th2prime(omega, tau)/th2(omega, tau)))
-    return Quaternion(real(value), imag(value), 0, 0)
+    return Q.Quaternion(real(value), imag(value), 0, 0)
 end
 
 function numericallySolveRotation(wFunc, axisCalc)
     dwFunc = (v) -> something(gradient(wFunc, v)[1], 0)
 
     function Q_rhs(v)
-        s = sqrt(1 - (dwFunc(v)^2))
+        s =  sqrt(1 - (dwFunc(v)^2))
         W = axisCalc(wFunc(v))
 
-        return s * W * Quaternion(0.0, 0.0, 0.0, 1.0)  # Pure imaginary in k direction
+        return s * W * Q.Quaternion(0.0, 0.0, 0.0, 1.0)  # Pure imaginary in k direction
     end
 
     function ODE!(du, u, p, t)
         Qf = Q_rhs(t)
-        PHI = Quaternion(u[1], u[2], u[3], u[4])  # Convert to Q.Quaternion
-        dPHI = Qf * PHI  # Q.Quaternion multiplication
+        PHI = Q.Quaternion(u[1], u[2], u[3], u[4])  # Convert to Quaternion
+        dPHI = Qf * PHI  # Quaternion multiplication
         du[1] = dPHI.s
         du[2] = dPHI.v1
         du[3] = dPHI.v2
@@ -78,7 +81,7 @@ function numericallySolveRotation(wFunc, axisCalc)
     prob = ODEProblem(ODE!, Phi0, vspan)
     sol = solve(prob)
 
-    outputFunction = (v) -> Quaternion(sol(v)[1], sol(v)[2], sol(v)[3], sol(v)[4])
+    outputFunction = (v) -> Q.Quaternion(sol(v)[1], sol(v)[2], sol(v)[3], sol(v)[4])
     return outputFunction
 end
 
@@ -90,7 +93,7 @@ function isothermicCylinder(w, axisCalc, omega = findOmegaRhombic(0.5 + 25/78 * 
         rot = rotationFunc(v)
         invRot = 1/rotationFunc(v)
 
-        embeddCurve = Quaternion(rhombicLatticeCurve(u, w(v), omega, tau)..., 0, 0) * Quaternion(0, 0, 1, 0)
+        embeddCurve = Q.Quaternion(rhombicLatticeCurve(u, w(v), omega, tau)..., 0, 0) * Q.Quaternion(0, 0, 1, 0)
 
         calculation = invRot * embeddCurve * rot
         return (calculation.v1, calculation.v2, calculation.v3)
