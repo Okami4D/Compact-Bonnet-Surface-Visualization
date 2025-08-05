@@ -1,23 +1,16 @@
 using GLMakie
 using EllipticFunctions
-include("../Tools/ParametricSurfaceTools.jl")
-include("../Tools/ParametricCurveTools.jl")
-include("../Tools/isothermicCylinderTools.jl")
+include("../../Tools/ParametricSurfaceTools.jl")
+include("../../Tools/ParametricCurveTools.jl")
+include("../../Tools/isothermicCylinderTools.jl")
 
 # Plot Setup
-fig = Figure(
-    size=(1200, 800), 
-    scenekw = (
-        lights = [DirectionalLight(RGBf(1, 1, 1), 
-        Vec3f(-1, 0, 0))],
-        )
-)
+fig = Figure(size=(1200, 800))
 
-ax = Axis3(
-    fig[1, 2], 
-    aspect = :data, 
-    perspectiveness = 0.6, 
-    clip=false
+ax = Axis(
+    fig[1, 2],
+    limits =(-3, 3, -4, 2),
+    title = "Isothermic Cylinder Curvature Lines - Changing Family Parameter"
 )
 hidedecorations!(ax)
 hidespines!(ax)
@@ -68,12 +61,11 @@ curve_obs = lift(familySlide.value, intervalSlide.interval, omegaSlide.value) do
     t_vals = LinRange(int..., 1000)
     points = [(
         rhombicLatticeCurve(t, w_val, omegaVal, tau)...,
-        0
     ) for t in t_vals]
     points
 end
 
-lines!(ax, curve_obs; color=:dodgerblue, linewidth=3)
+lines!(ax, curve_obs; color=:black, linewidth=3)
 
 #=
 curve_obs = lift(familySlide.value, intervalSlide.interval, omegaSlide.value) do w_val, int, omegaVal

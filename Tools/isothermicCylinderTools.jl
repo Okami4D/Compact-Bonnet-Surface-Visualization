@@ -1,6 +1,7 @@
+import Quaternions: Quaternion
+
 using Roots
 using Integrals
-using Quaternions
 using FiniteDifferences
 using DifferentialEquations
 using Zygote
@@ -51,21 +52,17 @@ function rhombicAxisCalculation(w, omega, tau)
     return Quaternion(real(value), imag(value), 0, 0)
 end
 
+function numericallySolveRotation(wFunc, axisCalc)
+    dwFunc = (v) -> something(gradient(wFunc, v)[1], 0)
 
-
-# VERY WIP
-function numericallySolveRotation(v, wFunc, axisCalc, Phi0)
-    dwFunc = something(gradient(wFunc, v)[1], 0)
-    # ========== 2. Define right-hand side quaternion Q(v) ==========
-    # Q(v) = sqrt(1 - w'(v)^2) * W1(w(v)) * k
     function Q_rhs(v)
-        s = sqrt(1 - (dwFunc^2))
+        s = sqrt(1 - (dwFunc(v)^2))
         W = axisCalc(wFunc(v))
 
-        return s * W * Quaternion(0.0, 0.0, 0.0, 1)  # Pure imaginary in k direction
+        return s * W * Quaternion(0.0, 0.0, 0.0, 1.0)  # Pure imaginary in k direction
     end
 
-    function ODE(du, u, p, t)
+    function ODE!(du, u, p, t)
         Qf = Q_rhs(t)
         PHI = Quaternion(u[1], u[2], u[3], u[4])  # Convert to Q.Quaternion
         dPHI = Qf * PHI  # Q.Quaternion multiplication
@@ -75,23 +72,78 @@ function numericallySolveRotation(v, wFunc, axisCalc, Phi0)
         du[4] = dPHI.v3
     end
 
-    vspan = (0.0, 2pi)           # Solve from v = 0 to 2π
+    vspan = (0.0, 4 * pi)           # Solve from v = 0 to 2π
 
-    prob = ODEProblem(ODE, Phi0, vspan)
-    sol = solve(prob, AitkenNeville())
-    return Quaternion(sol(v)[1], sol(v)[2], sol(v)[3], sol(v)[4])  # Convert back to Q.Quaternion
+    Phi0 = [1.0, 0.0, 0.0, 0.0]  # Initial condition for the quaternion
+    prob = ODEProblem(ODE!, Phi0, vspan)
+    sol = solve(prob)
+
+    outputFunction = (v) -> Quaternion(sol(v)[1], sol(v)[2], sol(v)[3], sol(v)[4])
+    return outputFunction
 end
 
 
 function isothermicCylinder(w, axisCalc, omega = findOmegaRhombic(0.5 + 25/78 * im), tau = 0.5 + 25/78 * im)
+    rotationFunc = numericallySolveRotation(w, axisCalc)
 
-    wFunc = (v) -> w(v)
-    sol = (v) -> numericallySolveRotation(v, wFunc, axisCalc)
+    function cylinderCalc(u, v)
+        rot = rotationFunc(v)
+        invRot = 1/rotationFunc(v)
 
-    curve = (u, v) -> Quaternion(0, rhombicLatticeCurve(u, v, omega, tau)..., 0)
+        embeddCurve = Quaternion(rhombicLatticeCurve(u, w(v), omega, tau)..., 0, 0) * Quaternion(0, 0, 1, 0)
 
-    f = (u, v) -> 1/sol(v) * curve(u, w(v)) * Quaternion(0.0, 0.0, 1.0, 0.0) * sol(v)
+        calculation = invRot * embeddCurve * rot
+        return (calculation.v1, calculation.v2, calculation.v3)
+    end
 
-    # 4. Calculate the coordinates of the isothermic cylinder
-    return f
+    return cylinderCalc
+end
+
+
+function sphericalrhombicLinesQ3Coefficients(tau)
+    omega = findOmegaRhombic(tau)
+    coeff1 = (th1prime(0, tau)/th2(omega, tau))^2
+    coeff2 = (th1(omega, tau)/ th2(0, tau))^2
+    coeff3 = (th3(omega, tau)/ th4(0, tau))^2
+    coeff4 = (th4(omega, tau)/ th3(0, tau))^2
+
+    return coeff1, coeff2, coeff3, coeff4
+end
+
+function sphericalrhombicLinesQ3(tau)
+    coeff1, coeff2, coeff3, coeff4 = sphericalrhombicLinesQ3Coefficients(tau)
+    return (s) -> coeff1 * (s - coeff2) * (s - coeff3) * (s - coeff4)
+end
+
+function sphericalrhombicLinesQ(s1, s2, delta, tau)
+    Q3 = sphericalrhombicLinesQ3(tau)
+    return (s) -> -(s - s1)^2 * (s - s^2)^2 + delta^2 * Q3(s)
+end
+
+
+## Calcualted by Hand. Doublecheck maybe
+function ellipticCurveinvariantsQ3(tau)
+    A, B, C, D = sphericalrhombicLinesQ3Coefficients(tau)
+    c1 = A/4
+    c2 = -(C + B - A * D)/6
+    c3 = (D * C + D * B + B * C) /4
+    c4 = -(B * C * D)
+
+    g2 = - 4 * c1 * c3 + 3 * c2^2
+    g3 = 2 * c1 * c2 * c3 - c2^3 - c1^2 * c4 
+    return g2, g3
+end
+
+## not sure how to read the paper since s1 and s2 are specified abut s0 is used which seems independent of s1 and s2
+function sphericalCurvatureLinesW(s1, s2, delta, tau)
+    Q3 = sphericalrhombicLinesQ3(tau)
+    Q = sphericalrhombicLinesQ(s1, s2, delta, tau)
+
+    Q3prime = (s) -> something(gradient(Q3, s)[1], 0)
+    Qprime = (s) -> something(gradient(Q, s)[1], 0)
+
+    Q3primeprime = (s) -> something(gradient(Q3prime, s)[1], 0)
+    Qprimeprime = (s) -> something(gradient(Qprime, s)[1], 0)
+
+    a0 = 1/24 * Q3primeprime(s)
 end

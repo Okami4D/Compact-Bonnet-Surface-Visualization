@@ -6,6 +6,11 @@ end
 function th2(z, tau)
     return jtheta2(z, exp(im * pi * tau))
 end
+
+function th3(z, tau)
+    return jtheta3(z, exp(im * pi * tau))
+end
+
 function th4(z, tau)
     return jtheta4(z, exp(im * pi * tau))
 end
