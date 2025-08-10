@@ -22,8 +22,9 @@ Plots a parametric surface defined by the function `f(u, v)`, where `x` and `y` 
 plotParametricSurface((u, v) -> [u, v, u^2 - v^2], -1:0.1:1, -1:0.1:1)
 ```
 """
-function plotParametricSurface(f, x, y; kwargs...)
-    surface!([[f(i,j)[k] for i in x, j in y] for k in 1:3]...; kwargs...)
+function plotParametricSurface(f, x, y, axis::Union{Axis3, Nothing} = nothing; kwargs...)
+    ax = isnothing(axis) ? current_axis() : axis
+    surface!(ax, [[f(i,j)[k] for i in x, j in y] for k in 1:3]...; kwargs...)
 end
 
 
@@ -43,8 +44,10 @@ Plots a wireframe of a parametric surface defined by the function `f(u, v)`, whe
 plotParametricWireframe((u, v) -> [u, v, sin(u)*cos(v)], 0:0.1:2π, 0:0.1:2π)
 ```
 """
-function plotParametricWireframe(f, x, y; kwargs...)
-    wireframe!([[f(i,j)[k] for i in x, j in y] for k in 1:3]...; kwargs...)
+function plotParametricWireframe(f, x, y, axis::Union{Axis3, Nothing} = nothing;  kwargs...)
+    ax = isnothing(axis) ? current_axis() : axis
+    wireframe!(ax, [[f(i,j)[k] for i in x, j in y] for k in 1:3]...; kwargs...)
+    
 end
 
 
