@@ -26,7 +26,7 @@ sliderGrid = GridLayout(fig[2, 1], rows = 4, columns = 2)
 # The slider changing the w parameter, which should be thought of as chosing one curve from the family of isothermic cylinder curves
 familySlide = Slider(
     sliderGrid[1, 2], 
-    range = 0:0.01:2, 
+    range = 0:0.01:2*pi, 
     startvalue = 0.5, 
     update_while_dragging=true, 
 )
@@ -63,7 +63,7 @@ Label(sliderGrid[3, 1], omegaSlideText, tellwidth = false)
 # The toggle to switch between rhombic and rectangular lattice
 rhombicToggle = Toggle(
     sliderGrid[4, 2], 
-    active = toggl[]
+    active = true
 )
 togglText = lift(rhombicToggle.active) do int
     if int == true

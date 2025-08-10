@@ -18,10 +18,19 @@ include("../../Tools/isothermicCylinderTools.jl")
 tau = 0.5 + 0.3205128205 * im # Calculated from the Paper
 omega = findOmegaRhombic(tau)
 
+umin = 0 
+umax = 2 * pi
+vmin = 0
+vmax = 4 * pi
+
 # Magic Constants from the Paper
 A = 1.44531765156
 B = 1.33527652772
 C = 1.05005399924
+#A = 0.1
+#B = 0.1
+#C = 0.3
+
 
 
 # Plot Setup
@@ -69,11 +78,6 @@ rotationAxis =  (q.v1 / sin(rotationAngle / 2), q.v2 / sin(rotationAngle / 2), q
 
 
 # Plotting the surface
-umin = 0 
-umax = 2 * pi
-vmin = 0
-vmax = 4 * pi
-
 N = 200
 
 x = LinRange(umin, umax, N)
