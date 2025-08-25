@@ -5,6 +5,7 @@ using FiniteDifferences
 using DifferentialEquations
 using Zygote
 using SciMLBase
+using ForwardDiff
 
 import Quaternions as Q
 
@@ -56,10 +57,11 @@ function rhombicAxisCalculation(w, omega, tau)
 end
 
 function numericallySolveRotation(wFunc, axisCalc)
-    dwFunc = (v) -> something(gradient(wFunc, v)[1], 0)
+    #dwFunc = (v) -> ForwardDiff.derivative(wFunc, v)
+    dwFunc = (s) -> round(central_fdm(5, 1)(wFunc, s), digits = 20)^2
 
     function Q_rhs(v)
-        s =  sqrt(1 - (dwFunc(v)^2))
+        s =  sqrt(1 - dwFunc(v))
         W = axisCalc(wFunc(v))
 
         return s * W * Q.Quaternion(0.0, 0.0, 0.0, 1.0)  # Pure imaginary in k direction
@@ -102,6 +104,10 @@ function isothermicCylinder(w, axisCalc, omega = findOmegaRhombic(0.5 + 25/78 * 
     return cylinderCalc
 end
 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------------------
 
 function sphericalrhombicLinesQ3Coefficients(tau)
     omega = findOmegaRhombic(tau)
@@ -120,21 +126,54 @@ end
 
 function sphericalrhombicLinesQ(s1, s2, delta, tau)
     Q3 = sphericalrhombicLinesQ3(tau)
-    return (s) -> -(s - s1)^2 * (s - s^2)^2 + delta^2 * Q3(s)
+    return (s) -> -1 * (s - s1)^2 * (s - s2)^2 + delta^2 * Q3(s)
 end
 
 
 ## Calcualted by Hand. Doublecheck maybe
 function ellipticCurveinvariantsQ3(tau)
-    A, B, C, D = sphericalrhombicLinesQ3Coefficients(tau)
-    c1 = A/4
-    c2 = -(C + B - A * D)/6
-    c3 = (D * C + D * B + B * C) /4
-    c4 = -(B * C * D)
+    Q3_A, Q3_B, Q3_C, Q3_D = sphericalrhombicLinesQ3Coefficients(tau)
+    
+    A = -(Q3_A * Q3_B * Q3_C * Q3_D)
+    B = Q3_A * Q3_C * Q3_D + Q3_A * Q3_B * Q3_D + Q3_A * Q3_B * Q3_C
+    C = -(Q3_A * Q3_C + Q3_A * Q3_B + Q3_A  * Q3_D)
+    D = Q3_A
+    E = 0
 
-    g2 = - 4 * c1 * c3 + 3 * c2^2
-    g3 = 2 * c1 * c2 * c3 - c2^3 - c1^2 * c4 
+    return calculateInvariants(A, B, C, D, E)
+end
+
+## Calculate the invariants of the elliptic curve Q(s) = A + B * s + C * s^2 + D * s^3 + E * s^4
+function calculateInvariants(A, B, C, D, E)
+    c0 = E
+    c1 = D/4
+    c2 = C/6
+    c3 = B/4
+    c4 = A
+
+    g2 = c0 * c4 - 4 * c1 * c3 + 3 * c2^2
+    g3 = c0 * c2 * c4 + 2 * c1 * c2 * c3 - c2^3 - c0 * c3^2 - c1^2 * c4 
     return g2, g3
+end
+
+function ellipticCurveInvariantsdeltaQ(s1, s2, delta, tau)
+    Q3_A, Q3_B, Q3_C, Q3_D = sphericalrhombicLinesQ3Coefficients(tau)
+    
+    A = -(Q3_A * Q3_B * Q3_C * Q3_D)
+    B = Q3_A * Q3_C * Q3_D + Q3_A * Q3_B * Q3_D + Q3_A * Q3_B * Q3_C
+    C = -(Q3_A * Q3_C + Q3_A * Q3_B + Q3_A  * Q3_D)
+    D = Q3_A
+    E = 0
+
+    invDelta = 1 / delta^2
+
+    Ap = -invDelta * (s1^2 * s2^2)
+    Bp = 2 * invDelta * (s1^2 * s2 + s1 * s2^2)
+    Cp = - invDelta * (s1^2 + 4 * s1 * s2 + s2^2)
+    Dp = 2 * invDelta * (s1 + s2)
+    Ep = -invDelta
+
+    return calculateInvariants(Ap + A, Bp + B, Cp + C, Dp + D, Ep + E)
 end
 
 ## not sure how to read the paper since s1 and s2 are specified abut s0 is used which seems independent of s1 and s2
