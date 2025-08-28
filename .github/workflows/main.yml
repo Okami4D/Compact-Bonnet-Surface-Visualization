@@ -2,12 +2,16 @@ name: Documentation
 
 on:
   push:
-    branches: [ main ]   # change to your default branch
+    branches:
+      - main # update to match your development branch (master, main, dev, trunk, ...)
     tags: '*'
   pull_request:
 
 jobs:
   build:
+    # These permissions are needed to:
+    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
+    # - Delete old caches: https://github.com/julia-actions/cache#usage
     permissions:
       actions: write
       contents: write
@@ -29,4 +33,5 @@ jobs:
       - name: Build and deploy
         run: julia --color=yes --project=docs docs/make.jl
         env:
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # optional SSH key if you generated one
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
