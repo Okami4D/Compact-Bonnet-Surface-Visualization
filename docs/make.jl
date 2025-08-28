@@ -14,4 +14,4 @@ makedocs(
 )
 
 # deploy to gh-pages (replace user/repo)
-deploydocs(repo = "github.com/Okami4D/Compact-BonnetSurface-Visualization.git")
+deploydocs(repo = "github.com/Okami4D/Compact-Bonnet-Surface-Visualization.git")
