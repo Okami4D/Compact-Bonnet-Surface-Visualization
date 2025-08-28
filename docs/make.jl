@@ -1,7 +1,7 @@
 using Documenter
 
 makedocs(
-    sitename = "Parametric Surface Visualization - Compact Bonnet Pairs",
+    sitename = "Compact Bonnet Surface Visualization",
     authors = "Kiba Mangandango",
     pages = [
     "Home"     => "index.md",
