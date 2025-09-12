@@ -53,7 +53,7 @@ hidedecorations!(ax)
 hidespines!(ax)
 
 # Basic UI
-#slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
+slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
 
 
 #-------
@@ -77,12 +77,23 @@ rotationAxis =  (q.v1 / sin(rotationAngle / 2), q.v2 / sin(rotationAngle / 2), q
 
 
 # Plotting the surface
-N = 100
+N = 40
 
 x = LinRange(umin, umax, N)
 y = LinRange(vmin, vmax, N)
 
 plotParametricWireframe(f_1, x, y; color = (:blue, 0.05), transparency = true)
-#plotParametricWireframe(f_2, x, y; color = (:green, 0.05), transparency = true)
+plotParametricWireframe(f_2, x, y; color = (:green, 0.05), transparency = true)
+
+curvObs_1 = lift(slider.value) do val
+    points = [f_1(x_val, val) for x_val in x]
+end
+
+curvObs_2 = lift(slider.value) do val
+    points = [f_2(x_val, val) for x_val in x]
+end
+
+lines!(ax, curvObs_1; color = (:blue, 1), linewidth = 4)
+lines!(ax, curvObs_2; color = (:blue, 1), linewidth = 4)
 
 fig
