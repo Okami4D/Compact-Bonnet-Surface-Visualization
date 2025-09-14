@@ -45,24 +45,27 @@ as a map
 ```
 
 this is achieved programmatically by the function “convertToQuaternion”. We can then consider the differential of this map 
+
 ```math
 d \tilde{f} = \del_{x} f dx + \del_{y} f dy
 ```
 
 Then the operations we are concerend with are given for the
-- **Christoffel Dual**: We call a parametrization ``h: \mathbb{R}^{2} \to \mathbb{R}^{3}`` the christoffel dual of $f$ if 
+- **Christoffel Dual**: We call a parametrization ``h: \mathbb{R}^{2} \to \mathbb{R}^{3}`` the christoffel dual of ``f`` if 
+
 ```math
 dh = e^{-2h} (\del_{u}f du - \del_{v}f dv) = \frac{\del_{u}f}{\norm{\del_{u}f}}du - \frac{\del_{v}f}{\norm{\del_{v}f}}dv
 ```
 
 
-- **Spin Transform**: Given a quaternion ``\lambda: \mathbb{R}^{2} \to \mathbb{H}`` we define the spin transform of ``f`` by ``\lambda`` to be the parametrization $h$ satisfying: 
+- **Spin Transform**: Given a quaternion ``\lambda: \mathbb{R}^{2} \to \mathbb{H}`` we define the spin transform of ``f`` by ``\lambda`` to be the parametrization ``h`` satisfying: 
 
 ```math
 dh = \overline{\lambda} df \lambda
 ```
 
 Because all of these definitions only define the differential of our parametrizations the toolkit also provides a compatible way to numerically integrate the parametrization. This is not very performant since in the aim to keep the outputs of all operations functions that act as parametrizations, we require that at every evaluation we recalculate the numerical integration and differentiation. Meaning that for every $(x, y)$ we have the sequence
+
 ```math
 (x, y) \rightarrow \text{numerically differentiate} \rightarrow \text{evaluate operation} \rightarrow \text{numerically integrate} \rightarrow \begin{pmatrix}X \\ Y \\Z\end{pmatrix}
 ```
