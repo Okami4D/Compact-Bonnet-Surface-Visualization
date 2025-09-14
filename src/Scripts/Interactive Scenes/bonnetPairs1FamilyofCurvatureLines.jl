@@ -28,10 +28,6 @@ vmax = 4 * pi
 A = 1.44531765156
 B = 1.33527652772
 C = 1.05005399924
-#A = 0.1
-#B = 0.1
-#C = 0.3
-
 
 
 # Plot Setup
@@ -43,14 +39,27 @@ fig = Figure(
     )
 )
 
-ax = Axis3(
+axLeft = Axis3(
     fig[1, 1],
-    aspect=:data,
+    aspect=:equal,
     perspectiveness=0.6,
     clip=false
 )
-hidedecorations!(ax)
-hidespines!(ax)
+
+
+axRight = Axis3(
+    fig[1, 2],
+    aspect=:equal,
+    perspectiveness=0.6,
+    clip=false
+)
+
+hidedecorations!(axLeft)
+hidedecorations!(axRight)
+
+hidespines!(axLeft)
+hidespines!(axRight)
+
 
 # Basic UI
 slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
@@ -62,28 +71,16 @@ slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
 # Defining the reparemitriazation
 w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(2 * v) + (B / (4 * pi^2)) * cos(2 * v)
 
-
 f_1, f_2 = generateBonnetPair(w, omega, tau);
 
-
-# Extra calculations for calculating the necessary rotation and axis to use the rotational symmetry of the isothermic cylinder
-#=
-rot = numericallySolveRotation(w, axis)
-
-q = 1/rot(0) * rot(2 * pi)
-rotationAngle = acos(q.s) * 2
-rotationAxis =  (q.v1 / sin(rotationAngle / 2), q.v2 / sin(rotationAngle / 2), q.v3 / sin(rotationAngle / 2))
-=#
-
-
 # Plotting the surface
-N = 40
+N = 100
 
 x = LinRange(umin, umax, N)
 y = LinRange(vmin, vmax, N)
 
-plotParametricWireframe(f_1, x, y; color = (:blue, 0.05), transparency = true)
-plotParametricWireframe(f_2, x, y; color = (:green, 0.05), transparency = true)
+plotParametricWireframe(f_1, x, y, axLeft; color = (:black, 0.05), transparency = true)
+plotParametricWireframe(f_2, x, y, axRight; color = (:black, 0.05), transparency = true)
 
 curvObs_1 = lift(slider.value) do val
     points = [f_1(x_val, val) for x_val in x]
@@ -93,7 +90,7 @@ curvObs_2 = lift(slider.value) do val
     points = [f_2(x_val, val) for x_val in x]
 end
 
-lines!(ax, curvObs_1; color = (:blue, 1), linewidth = 4)
-lines!(ax, curvObs_2; color = (:blue, 1), linewidth = 4)
+lines!(axLeft, curvObs_1; color = (:blue, 1), linewidth = 4)
+lines!(axRight, curvObs_2; color = (:blue, 1), linewidth = 4)
 
 fig
