@@ -57,7 +57,7 @@ function rhombicAxisCalculation(w, omega, tau)
 end
 
 function numericallySolveRotation(wFunc, axisCalc)
-    #dwFunc = (v) -> ForwardDiff.derivative(wFunc, v)
+
     dwFunc = (s) -> round(central_fdm(5, 1)(wFunc, s), digits = 20)^2
 
     function Q_rhs(v)
