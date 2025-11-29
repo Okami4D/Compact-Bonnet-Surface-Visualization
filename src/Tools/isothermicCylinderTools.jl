@@ -124,9 +124,30 @@ function sphericalrhombicLinesQ3(tau)
     return (s) -> coeff1 * (s - coeff2) * (s - coeff3) * (s - coeff4)
 end
 
+function sphericalrhombicLinesQ3Prime(tau)
+    c1, c2, c3, c4 = sphericalrhombicLinesQ3Coefficients(tau)
+    return (s) -> 3 * c1 * s^2 -  2 * c1 * c2 * s - 2 * c1 * c3 * s - 2 * c1 * c4 * s + c1 * c2 * c3 + c1 * c2 * c4 + c1 * c3 * c4
+end
+
+function sphericalrhombicLinesQ3PrimePrime(tau)
+    c1, c2, c3, c4 = sphericalrhombicLinesQ3Coefficients(tau)
+    return (s) -> 6* c1 * s - 2 * c1 * c2 - 2 * c1 * c3 - 2 * c1 * c4
+end
+
+
 function sphericalrhombicLinesQ(s1, s2, delta, tau)
     Q3 = sphericalrhombicLinesQ3(tau)
     return (s) -> -1 * (s - s1)^2 * (s - s2)^2 + delta^2 * Q3(s)
+end
+
+function sphericalrhombicLinesQPrime(s1, s2, delta, tau)
+    Q3prime = sphericalrhombicLinesQ3Prime(tau)
+    return (s) -> delta^2 * Q3prime(s) - 2 * (s - s1) * (s - s2)*(2s - s1 - s2)
+end
+
+function sphericalrhombicLinesQPrimePrime(s1, s2, delta, tau)
+    Q3primeprime = sphericalrhombicLinesQ3PrimePrime(tau)
+    return (s) -> delta^2 * Q3primeprime(s) - 2 * (6 * s^2 - 6 * s * (s1 + s2) + s1^2 + s2^2 + 4 * s1 * s2)
 end
 
 

@@ -29,8 +29,8 @@ vmin = 0
 vmax = 4 * pi
 
 Q3 = (s) -> sphericalrhombicLinesQ3(tau)(s)
-Q3prime = (s) -> complex_step_derivative(Q3, s)
-Q3prime2 = (s) -> complex_step_derivative(Q3prime, s)
+Q3prime = (s) -> sphericalrhombicLinesQ3Prime(tau)(s)
+Q3prime2 = (s) -> sphericalrhombicLinesQ3PrimePrime(tau)(s)
 
 gQ3 = ellipticCurveinvariantsQ3(tau)
 hpQ3 = halfPeriods(gQ3...)
@@ -38,19 +38,18 @@ tauQ3 = hpQ3[2] / hpQ3[1]
 
 
 QCurve = (s) -> sphericalrhombicLinesQ(s1, s2, delta, tau)(s)
-QCurvePrime = (s) -> complex_step_derivative(QCurve, s)
-QCurvePrime2 = (s) -> complex_step_derivative(QCurvePrime, s)
+QCurvePrime = (s) -> sphericalrhombicLinesQPrime(s1, s2, delta, tau)(s)
+QCurvePrime2 = (s) -> sphericalrhombicLinesQPrimePrime(s1, s2, delta, tau)(s)
 
 gQ = ellipticCurveInvariantsdeltaQ(s1, s2, delta, tau)
-
+hpQ = halfPeriods(gQ...)
 
 s1min = Roots.find_zero((s) -> real(QCurve(s)), s1 - delta)
 s1plu = Roots.find_zero((s) -> real(QCurve(s)), s2 + delta)
 
-if s1min > s1pluJa 
+if s1min > s1plu
     s1min, s1plu = s1plu, s1min
 end
-
 
 s0 = (th1(omega, tauQ3)^2)/(th2(omega, tauQ3)^2)
 
@@ -62,17 +61,13 @@ a2 = -1/96 * Q3prime(s0) * delta^(-2) * QCurvePrime2(s1min)
 a3 = (s1min - s0)
 a4 = 1/4 * delta^(-2) * QCurvePrime(s1min) - (s1min - s0) * 1/24 * delta^(-2) * QCurvePrime2(s1min)
 
-
-
-
 function w(s)
-    ArbTauQ3 = ArbComplex(tauQ3)
-    wpval = wp(s, g = gQ)           # ℘(s)
+    wpval = weierstrass_p(ArbComplex(s), ArbComplex(hpQ3[1]), ArbComplex(hpQ3[2]))          # ℘(s)
     numerator   = a1 * wpval + a2
     denominator = a3 * wpval + a4
     z = ArbComplex(a0 + numerator / denominator)
 
-    return weierstrass_inv_p(z, ArbTauQ3)
+    return weierstrass_inv_p(z, ArbComplex(hpQ[1]), ArbComplex(hpQ[2]))
 end
 
 dwFunc = (s) -> central_fdm(5, 1)(w, s)
