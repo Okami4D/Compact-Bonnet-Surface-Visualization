@@ -2,85 +2,109 @@ using GLMakie
 include("../Tools/ParametricSurfaceTools.jl")
 include("../Tools/QuaternionicGeometryToolkit.jl")
 
-# Plot Setup
-fig = Figure(size=(1800, 800), scenekw = (lights = [DirectionalLight(RGBf(1, 1, 1), Vec3f(-1, 0, 0))],))
+# Plot Setup — changed lighting a bit (two directional lights)
+fig = Figure(
+    size=(1800, 800),
+    scenekw = (lights = [
+        DirectionalLight(RGBf(0.9, 0.9, 0.9), Vec3f(-1, -1, 1)),
+        DirectionalLight(RGBf(0.6, 0.6, 0.6), Vec3f(1, 0.5, -0.2)),
+    ],)
+)
 
 # 3D axis for f
-ax1 = Axis3(
-    fig[1, 1], 
-    aspect = :data, 
-    perspectiveness = 0.6, 
-    clip=false,
+axf = Axis3(
+    fig[1, 1],
+    aspect = :data,
+    perspectiveness = 0.6,
+    clip = false,
     title = "Surface f"
 )
-hidedecorations!(ax1)
-hidespines!(ax1)
-
-# 2D axis for UV plane
-ax2 = Axis(
-    fig[1, 2],
-    aspect = DataAspect(),
-    title = "UV Parameter Space"
-)
+hidedecorations!(axf)
+hidespines!(axf)
 
 # 3D axis for fstar
-ax3 = Axis3(
-    fig[1, 3], 
-    aspect = :data, 
-    perspectiveness = 0.6, 
-    clip=false,
+axfstar = Axis3(
+    fig[1, 2],
+    aspect = :data,
+    perspectiveness = 0.6,
+    clip = false,
     title = "Dual Surface f*"
 )
-hidedecorations!(ax3)
-hidespines!(ax3)
+hidedecorations!(axfstar)
+hidespines!(axfstar)
 
 # Surface definitions
 f = parametricFuncEnneper()
 fstar = generateDualSurface(f)
 
-# Resolution parameters
-res1 = 100
-u1 = LinRange(0.01, 2 * pi, res1)
-v1 = LinRange(0.01, pi, res1)
+# Parameter domain (Enneper)
+umin = -2
+umax = 2
+vmin = -2
+vmax = 2
 
-res2 = 30
-u2 = LinRange(0.01, 4 * pi, res2)
-v2 = LinRange(0.01, 1 * pi, res2)
+# Resolution parameters for surfaces
+res1 = 40
+u1 = LinRange(umin, umax, res1)
+v1 = LinRange(vmin, vmax, res1)
 
-# Plot surfaces
-plotParametricSurface(f, u1, v1, ax1)
-plotParametricWireframe(fstar, u2, v2, ax3; color = (:black, 0.10), transparency = true)
+res2 = 20
+u2 = LinRange(umin, umax, res2)
+v2 = LinRange(vmin, vmax, res2)
 
-# UV plane setup
-xlims!(ax2, u1[1], u1[end])
-ylims!(ax2, v1[1], v1[end])
-lines!(ax2, [u1[1], u1[end], u1[end], u1[1], u1[1]], [v1[1], v1[1], v1[end], v1[end], v1[1]], color=:gray, linewidth=2)
+# Plot surfaces (static)
+plotParametricSurface(f, u1, v1, axf)
+plotParametricWireframe(fstar, u2, v2, axfstar; color = (:black, 0.10), transparency = true)
 
-# Observable for the draggable point
-uv_point = Observable(Point2f(0.5, 0.5))
+# UI: sliders to control origin (fast updates only update lines on f)
+u_slider = Slider(fig[2, 1], range = umin:0.01:umax, startvalue = origin_u0, width = 500)
+v_slider = Slider(fig[3, 1], range = vmin:0.01:vmax, startvalue = origin_v0, width = 500)
 
-# Corresponding 3D points
-point_on_f = lift(uv_point) do pt
-    Point3f(f(pt[1], pt[2])...)
+# Button to compute and show the corresponding lines on fstar (expensive)
+compute_button = Button(fig[4, 1])
+status_label = Label(fig[4, 2], tellwidth = false)
+
+# Line geometry parameters
+# keep a single delta array starting at 0 so lines originate at the exact origin point
+line_length = (umax - umin) / 4
+lineSamples = 64
+lineDelta = LinRange(0.0, line_length, lineSamples)
+
+# Observables to keep track of plotted line objects so we can delete them when updating
+f_lines = Observable(Vector{Any}())      # stores the two plotted objects on axf
+fstar_lines = Observable(Vector{Any}())  # stores the two plotted objects on axfstar
+
+
+lineU = lift(u_slider.value, v_slider.value) do u0, v0
+    [(u0 + delta, v0) for delta in lineDelta]
 end
 
-point_on_fstar = lift(uv_point) do pt
-    Point3f(fstar(pt[1], pt[2])...)
+lineV = lift(u_slider.value, v_slider.value) do u0, v0
+    [(u0, v0 + delta) for delta in lineDelta]
 end
 
-# Plot the draggable point in UV space
-scatter!(ax2, uv_point, color=:red, markersize=15, label="Active Point")
+FlineU = lift(lineU) do pts
+    [Point3f(f(u, v)...) for (u, v) in pts]
+end
+FlineV = lift(lineV) do pts
+    [Point3f(f(u, v)...) for (u, v) in pts]
+end
 
-# Plot corresponding points on both 3D surfaces
-scatter!(ax1, point_on_f, color=:red, markersize=10)
-scatter!(ax3, point_on_fstar, color=:red, markersize=10)
+lines!(axf, FlineU; color = :red, linewidth = 2)
+lines!(axf, FlineV; color = :blue, linewidth = 2)
 
-# Make the UV point draggable
-deregister_interaction!(ax2, :rectanglezoom)
-on(events(ax2).mouseposition) do pos
-    if Makie.is_mouseinside(ax2)
-        uv_point[] = pos
-    end
+
+# Button action: compute corresponding lines on fstar (expensive) and show them in one action
+on(compute_button.clicks) do _
+    status_label.text[] = "Computing f* lines..."
+    
+    FStarlineU = [Point3f(fstar(u, v)...) for (u, v) in lineU[]]
+    FStarlineV = [Point3f(fstar(u, v)...) for (u, v) in lineV[]]
+
+    lines!(axfstar, FStarlineU; color = :red, linewidth = 2)
+    lines!(axfstar, FStarlineV; color = :blue, linewidth = 2)
+
+    status_label.text[] = "f* lines shown (computed for current origin)"
 end
 
 fig

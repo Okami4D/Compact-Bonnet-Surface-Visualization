@@ -3,8 +3,8 @@ include("../../Tools/ParametricSurfaceTools.jl")
 
 global renderParam = parametricFuncPlane()
 global renderRes = 50
-global renderX = LinRange(-2, 2, resolution)
-global renderY = LinRange(-2, 2, resolution)
+global renderX = LinRange(-2, 2, renderRes)
+global renderY = LinRange(-2, 2, renderRes)
 global wireframeRendering = false
 
 
@@ -33,7 +33,7 @@ hidespines!(ax)
 
 topGrid = GridLayout(fig[1, 1], rows = 1, columns = 2, tellwidth = false)
 ObjectMenu = Menu(topGrid[1, 1], 
-    options = ["Plane", "Sphere", "Helicoid", "Torus", "Enneper", "Wente", "Klein Bottle"],
+    options = ["Plane", "Sphere", "Helicoid", "Torus", "Enneper", "Wente", "Klein Bottle", "Isothermic Catenoid", "Isothermic Cone"],
     default = "Plane"
 )
 
@@ -95,6 +95,10 @@ on(ObjectMenu.selection) do selection
         render!(parametricFuncWente(17.7324), -pi/2, pi/4, -pi, 2 * pi/3)
     elseif selection == "Klein Bottle"
         render!(parametricFuncKleinBottle(), 0, 2 * pi, 0, 2 * pi)
+    elseif selection == "Isothermic Catenoid"
+        render!(parametricFuncIsothermicCatenoid(), 0, 2 * pi, -pi/2,  pi/2)
+    elseif selection == "Isothermic Cone"
+        render!(parametricFuncIsothermicCone(1), 0, 2 * pi, -1, 1)
     else
         error("Unknown selection: $selection")
     end

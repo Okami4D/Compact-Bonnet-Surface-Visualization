@@ -14,7 +14,7 @@ fig = Figure(
 
 ax = Axis3(
     fig[1, 1], 
-    aspect = :data, 
+    aspect = :equal, 
     perspectiveness = 0.6, 
     clip=false
 )
@@ -29,22 +29,22 @@ ymin = 0
 ymax = 2 * pi
 
 
-x = LinRange(xmin, xmax, 1000)
-y = LinRange(ymin, ymax, 1000)
+x = LinRange(xmin, xmax, 100)
+y = LinRange(ymin, ymax, 100)
 
-density = Observable(5)  # initial density
+# initial density
+e = Observable(0.0)
 
-slider = Slider(fig[2, 1], range = 0:20, startvalue = 5)
+slider = Slider(fig[2, 1], range = 0:0.01:20, startvalue = 0)
+plotParametricSurface(f, x, LinRange(ymin, e[], 10))
+
 
 on(slider.value) do val
-    density[] = val
+    plotCoordinateCurves(f, x, y, (val), ())
+    e[] = val
 end
 
-on(density) do _
-    empty!(ax)
-    plotCoordinateCurves(f, x, y, LinRange(xmin, xmax, density[]), LinRange(ymin, ymax, density[]))
-end
 
-plotCoordinateCurves(f, x, y, LinRange(xmin, xmax, density[]), LinRange(ymin, ymax, density[]))
+plotParametricWireframe(f, x, y, ax; color = (:black, 0.05), transparency = true)
 
 fig

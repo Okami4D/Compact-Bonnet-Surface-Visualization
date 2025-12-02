@@ -8,7 +8,7 @@ ang = Observable(1.01 * pi)
 
 ax = Axis3(
     fig[1, 1], 
-    aspect = :data, 
+    aspect = :equal, 
     perspectiveness = 0.6, 
     clip=false
 )
@@ -17,7 +17,7 @@ hidedecorations!(ax)
 hidespines!(ax)
 
 
-f = parametricFuncPlane()
+f = parametricFuncIsothermicCatenoid()
 
 A = 1
 
@@ -38,15 +38,15 @@ g2 = integrateForm(gu2, gv2, 0.0, 0.0)
 
 res1 = 100
 
-u1 = LinRange(-2, 2, res1)
-v1 = LinRange(-2, 2, res1)
+u1 = LinRange(0, 2* pi, res1)
+v1 = LinRange(-pi/2 + 0.01, pi/2 - 0.01, res1)
 
 res2 = 10
-u2 = LinRange(-2, 2, res2)
-v2 = LinRange(-2, 2, res2)
+u2 = LinRange(0, 2* pi, res2)
+v2 = LinRange(-pi/2 + 0.01, pi/2 - 0.01, res2)
 
 
-plotParametricSurface(f, u1, v1)
-plotParametricWireframe(g1, u2, v2)
-plotParametricWireframe(g2, u2, v2)
+plotParametricSurface(f, u1, v1; transparency = true)
+plotParametricWireframe(g1, u2, v2; color = (:red, 0.05), transparency = true)
+plotParametricWireframe(g2, u2, v2; color = (:blue, 0.05), transparency = true)
 fig

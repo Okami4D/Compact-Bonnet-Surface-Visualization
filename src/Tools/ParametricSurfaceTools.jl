@@ -391,3 +391,55 @@ function parametricFuncKleinBottle(a=2.0, b=1.0)
         (x, y, z)
     end
 end
+
+"""
+    parametricFuncCylinder(r, h)
+Returns a parametric function for a cylinder of radius `r` and height `h`.
+    This is isothermic for r = 1.
+# Arguments
+- `r`: Radius of the cylinder.
+# Recommended Domains
+For typical visualization, use:
+- `u ∈ [0, 2π]`
+- `v ∈ [0, height]`
+# Returns
+A function `(u, v) -> (x, y, z)` representing the cylinder.
+# Example
+```julia
+cylinder = parametricFuncCylinder(1.0)
+u = range(0, 2π, length=100)
+v = range(0, 5.0, length=100)
+# Use cylinder(u, v) in your plotting or mesh function
+``` 
+"""
+function parametricFuncCylinder(r)
+    return (u, v) -> (
+        r * cos(u),
+        r * sin(u),
+        v
+    )
+end
+
+function parametricFuncIsothermicCatenoid()
+
+    out = (theta, phi) -> begin
+        t = atanh(tan(phi/2)) * 2
+        x = cosh(t) * cos(theta)
+        y = cosh(t) * sin(theta)
+        z = t
+        return (x, y, z)
+    end
+    return out
+end
+
+function parametricFuncIsothermicCone(k)
+    
+    out = (theta, psi) -> begin
+        s = exp(psi/sqrt(1 + k^2))
+        x = s * cos(theta)
+        y = s * sin(theta)
+        z = k * s
+        return (x, y, z)
+    end
+    return out
+end
