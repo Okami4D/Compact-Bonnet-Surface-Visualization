@@ -115,7 +115,7 @@ function renderwithW(wConst)
     lines!(plotAx, [(t, w(t)) for t in x])
 
     lines!(curveAx, planarCurveObs)
-    arrows3d!(ax, [(0, 0, 0)], [rotationAxis]; color = (:black, 0.5), normalize = true, tipradius = 0.01, lengthscale = 5,shaftradius = 0.01)
+    arrows3d!(ax, [(0, 0, 0)], [rotationAxis]; color = (:black, 0.2), normalize = true, lengthscale = 2, transparency = true)
 end
 
 on(wSlider.value) do value

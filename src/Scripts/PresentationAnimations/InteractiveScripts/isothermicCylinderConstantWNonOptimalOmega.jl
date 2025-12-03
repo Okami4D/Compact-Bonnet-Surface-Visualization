@@ -70,7 +70,7 @@ Label(sliderGrid[2, 1], "w =", tellwidth = false)
 wSlider = Slider(sliderGrid[2, 2], range = LinRange(0, 2 * pi,100), startvalue = 1)
 
 Label(sliderGrid[3, 1], "Omega =", tellwidth = false)
-omegaSlider = Slider(sliderGrid[3, 2], range = LinRange(0, 4,100), startvalue = findOmegaRhombic(tau))
+omegaSlider = Slider(sliderGrid[3, 2], range = LinRange(0, 4,400), startvalue = findOmegaRhombic(tau))
 
 
 #-------
@@ -118,7 +118,7 @@ function renderwithW(wConst, omega)
     lines!(plotAx, [(t, w(t)) for t in x])
 
     lines!(curveAx, planarCurveObs)
-    arrows3d!(ax, [(0, 0, 0)], [rotationAxis]; color = (:black, 0.2), normalize = true, lengthscale = 2)
+    arrows3d!(ax, [(0, 0, 0)], [rotationAxis]; color = (:black, 0.2), normalize = true, lengthscale = 2, transparency = true)
 end
 
 lift(wSlider.value, omegaSlider.value) do w, omegaVal

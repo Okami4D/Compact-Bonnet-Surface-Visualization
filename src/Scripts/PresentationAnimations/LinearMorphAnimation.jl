@@ -17,7 +17,9 @@ hidespines!(ax)
 # Define two surfaces to morph between
 f1 = parametricFuncIsothermicCatenoid()
 #f2 = f1
-f2 = parametricFuncIsothermicHelicoid()
+
+lamda = (u, v) -> Q.Quaternion(1, 1, 1, 1)
+f2 = spinTransform(f1, lamda)
 
 # Parameter domain
 umin, umax = 0, 2 * pi

@@ -117,7 +117,6 @@ q = 1/rot(0) * rot(2 * pi)
 rotationAngle = acos(q.s) * 2
 rotationAxis =  (q.v1 / sin(rotationAngle / 2), q.v2 / sin(rotationAngle / 2), q.v3 / sin(rotationAngle / 2))
 
-arrows3d!(ax, [(0, 0, 0)], [rotationAxis]; color = (:black, 0.5), normalize = true, tipradius = 0.01, lengthscale = 5,shaftradius = 0.01)
-
+arrows3d!(ax, [(0, 0, 0)], [rotationAxis]; color = (:black, 0.2), normalize = true, lengthscale = 2, transparency = true)
 
 fig
