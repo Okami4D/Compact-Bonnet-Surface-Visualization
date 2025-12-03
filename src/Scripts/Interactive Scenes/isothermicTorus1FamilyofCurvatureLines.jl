@@ -60,7 +60,9 @@ slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
 
 
 # Defining the reparemitriazation
-w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(2 * v) + (B / (4 * pi^2)) * cos(2 * v)
+#w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(2 * v) + (B / (4 * pi^2)) * cos(2 * v)
+w = (v) -> 0.5 * sin(v) + 1
+
 
 # Defining the axis calculation
 axis = (v) -> rhombicAxisCalculation(v, omega, tau)
@@ -94,16 +96,11 @@ end
 dir = Observable(Vec3f(0,0,0))
 lift(slider.value) do val
     #Incorrect Scaling but quickly Figure out
-    dir[] = Q.imag_part(currentRotQuat(val) * Q.Quaternion(0, 1, 0, 0))
+    dir[] = Q.imag_part(currentRotQuat(val) * Q.Quaternion(1, 0, 0, 0))
 end
 
 lines!(ax, curvObs; color = (:blue, 1), linewidth = 4)
-arrows3d!(ax, [(0, 0, 0)], dir; 
-color = (:black, 0.5),
-normalize = true, 
-tipradius = 0.01, 
-lengthscale = 5,
-shaftradius = 0.01)
+#arrows3d!(ax, [(0, 0, 0)], dir; color = (:black, 0.5), normalize = true, tipradius = 0.01, lengthscale = 5,shaftradius = 0.01)
 
 
 fig

@@ -19,10 +19,9 @@ include("../../Tools/QuaternionicGeometryToolkit.jl")
 tau = 0.5 + 0.3205128205 * im # Calculated from the Paper
 omega = findOmegaRhombic(tau)
 
-umin = 0 
-umax = 2 * pi
-vmin = 0
-vmax = 4 * pi
+umin, umax = -2, 2
+vmin, vmax = -2, 2
+
 
 # Magic Constants from the Paper
 A = 1.44531765156
@@ -44,20 +43,20 @@ fig = Figure(
 )
 
 ax = Axis3(
-    fig[1, 1],
+    fig[1, 1:2],
     aspect=:equal,
     perspectiveness=0.6,
     clip=false
 )
 
 ax2 = Axis3(
-    fig[1, 2],
+    fig[2, 1],
     aspect=:equal,
     perspectiveness=0.6,
     clip=false
 )
 ax3 = Axis3(
-    fig[1, 3],
+    fig[2, 2],
     aspect=:equal,
     perspectiveness=0.6,
     clip=false
@@ -70,19 +69,13 @@ hidedecorations!(ax3)
 hidespines!(ax3)
 
 # Basic UI
-slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
+#slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
 
 
 #-------
 
 
-# Defining the reparemitriazation
-w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(2 * v) + (B / (4 * pi^2)) * cos(2 * v)
-
-# Defining the axis calculation
-axis = (v) -> rhombicAxisCalculation(v, omega, tau)
-
-f = isothermicCylinder(w, axis, omega, tau)
+f = parametricFuncEnneper()
 
 
 A = 1
@@ -102,13 +95,15 @@ g1 = integrateForm(gu1, gv1, 0.0, 0.0)
 g2 = integrateForm(gu2, gv2, 0.0, 0.0)
 
 # Plotting the surface
-N = 200
+N = 20
 
 x = LinRange(umin, umax, N)
 y = LinRange(vmin, vmax, N)
 
-plotParametricWireframe(f, x, y, ax; color = (:black, 0.05), transparency = true)
-
+plotParametricWireframe(f, x, y, ax; color = (:black, 0.1), transparency = true)
+plotParametricWireframe(g1, x, y, ax2; color = (:black, 0.1), transparency = true)
+plotParametricWireframe(g2, x, y, ax3; color = (:black, 0.1), transparency = true)
+#=
 curvObs = lift(slider.value) do val
     points = [f(x_val, val) for x_val in x]
 end
@@ -125,5 +120,5 @@ curvObs_2 = lift(slider.value) do val
     points = [g2(x_val, val) for x_val in x]
 end
 lines!(ax3, curvObs_2; color = (:blue, 1), linewidth = 4)
-
-fig
+=#
+save(fig, "Enneper Bonnet Operation")

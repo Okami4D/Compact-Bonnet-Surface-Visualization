@@ -69,18 +69,20 @@ slider = Slider(fig[2, 1], range = LinRange(vmin, vmax,100), startvalue = 0)
 
 
 # Defining the reparemitriazation
-w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(2 * v) + (B / (4 * pi^2)) * cos(2 * v)
-
+#w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(2 * v) + (B / (4 * pi^2)) * cos(2 * v)
+w = (v) -> 0.5 * sin(v) + 1
 f_1, f_2 = generateBonnetPair(w, omega, tau);
 
 # Plotting the surface
-N = 100
+N = 80
 
 x = LinRange(umin, umax, N)
 y = LinRange(vmin, vmax, N)
 
 plotParametricWireframe(f_1, x, y, axLeft; color = (:black, 0.05), transparency = true)
 plotParametricWireframe(f_2, x, y, axRight; color = (:black, 0.05), transparency = true)
+fig
+
 
 curvObs_1 = lift(slider.value) do val
     points = [f_1(x_val, val) for x_val in x]
