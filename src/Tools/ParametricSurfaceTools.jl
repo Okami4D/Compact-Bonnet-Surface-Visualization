@@ -468,3 +468,7 @@ function parametricFuncModulatedTorus(modFunc, R)
         return (x, y, z)
     end
 end
+
+function parametricFuncIsothermicHelicoid()
+    return (v, u) -> (sinh(u) * cos(v), sinh(u) * sin(v), v)
+end

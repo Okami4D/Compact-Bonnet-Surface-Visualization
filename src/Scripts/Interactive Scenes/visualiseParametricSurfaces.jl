@@ -96,7 +96,7 @@ on(ObjectMenu.selection) do selection
     elseif selection == "Klein Bottle"
         render!(parametricFuncKleinBottle(), 0, 2 * pi, 0, 2 * pi)
     elseif selection == "Isothermic Catenoid"
-        render!(parametricFuncIsothermicCatenoid(), 0, 2 * pi, -pi/2,  pi/2)
+        render!(parametricFuncIsothermicCatenoid(), 0, 2 * pi, -pi/2 + 0.3,  pi/2 - 0.3)
     elseif selection == "Isothermic Cone"
         render!(parametricFuncIsothermicCone(1), 0, 2 * pi, -1, 1)
     else

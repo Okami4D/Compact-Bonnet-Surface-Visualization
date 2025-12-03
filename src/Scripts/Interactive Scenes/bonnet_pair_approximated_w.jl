@@ -121,4 +121,4 @@ curvObs_2 = lift(slider.value) do val
 end
 lines!(ax3, curvObs_2; color = (:blue, 1), linewidth = 4)
 =#
-save(fig, "Enneper Bonnet Operation")
+save("output.png", fig)

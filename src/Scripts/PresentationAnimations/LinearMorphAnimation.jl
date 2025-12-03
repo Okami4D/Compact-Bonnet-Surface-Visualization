@@ -15,18 +15,13 @@ hidedecorations!(ax)
 hidespines!(ax)
 
 # Define two surfaces to morph between
-f1 = parametricFuncHelicoid(1, 1)
-
-
-
-dir = (0, 1, 1)
-rotQuat = Quaternions.Quaternion(1, dir...)
-
-f2 = (u, v) -> Q.imag_part(Q.conj(rotQuat) * Q.Quaternion(0, f1(u, v)...) * rotQuat)
+f1 = parametricFuncIsothermicCatenoid()
+#f2 = f1
+f2 = parametricFuncIsothermicHelicoid()
 
 # Parameter domain
-umin, umax = -1.0, 1.0
-vmin, vmax = 0.0, 4.0 * pi
+umin, umax = 0, 2 * pi
+vmin, vmax = -pi/2 + 0.3,  pi/2 - 0.3
 udensity, vdensity = 100, 100
 
 u = LinRange(umin, umax, udensity)
@@ -46,7 +41,6 @@ record(fig, "LinearMorph.mp4", enumerate(iterator); framerate = framerate) do (i
     # Linear morph: f(u,v,t) = (1-t)*f1(u,v) + t*f2(u,v)
     f_morphed = (u_val, v_val) -> (1 - t) .* f1(u_val, v_val) .+ t .* f2(u_val, v_val)
     
-    arrows3d!(ax, [(0, 0, 0)], [dir])
     plotParametricSurface(f_morphed, u, v)
     
     print("Frame: ", i, "/", nFrames, "\n")
