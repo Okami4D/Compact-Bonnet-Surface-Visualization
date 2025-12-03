@@ -30,10 +30,6 @@ udensity, vdensity = 100, 100
 u = LinRange(umin, umax, udensity)
 v = LinRange(vmin, vmax, vdensity)
 
-x_vals = [p[1] for p in all_points]
-y_vals = [p[2] for p in all_points]
-z_vals = [p[3] for p in all_points]
-
 n = 10
 xlims!(ax, -n, n)
 ylims!(ax, -n, n)

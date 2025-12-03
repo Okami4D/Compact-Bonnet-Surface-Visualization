@@ -34,19 +34,15 @@ hidedecorations!(axfstar)
 hidespines!(axfstar)
 
 # Surface definitions
-f = parametricFuncEnneper()
 
-print("Generating dual surface...\n")
+umin, umax = -pi,  pi
+vmin, vmax = -1, 1
+f = parametricFuncIsothermicHelicoid()
+
 fstar = generateDualSurface(f)
-print("Dual surface generated.\n")
-# Parameter domain (Enneper)
-umin = -2
-umax = 2
-vmin = -2
-vmax = 2
 
 # Resolution parameters for surfaces
-res1 = 40
+res1 = 50
 u1 = LinRange(umin, umax, res1)
 v1 = LinRange(vmin, vmax, res1)
 
@@ -54,6 +50,10 @@ res2 = 20
 u2 = LinRange(umin, umax, res2)
 v2 = LinRange(vmin, vmax, res2)
 
+save("f2.obj", createParametricMesh(f, u1, v1))
+save("fDual2.obj", createParametricMesh(fstar, u1, v1))
+
+#=
 # Plot surfaces (static)
 print("Plotting surfaces...\n")
 plotParametricSurface(f, u1, v1, axf)
@@ -112,3 +112,4 @@ on(compute_button.clicks) do _
 end
 
 fig
+=#

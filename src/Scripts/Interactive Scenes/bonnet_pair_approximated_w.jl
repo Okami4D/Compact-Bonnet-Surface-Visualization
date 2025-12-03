@@ -19,8 +19,7 @@ include("../../Tools/QuaternionicGeometryToolkit.jl")
 tau = 0.5 + 0.3205128205 * im # Calculated from the Paper
 omega = findOmegaRhombic(tau)
 
-umin, umax = -2, 2
-vmin, vmax = -2, 2
+
 
 
 # Magic Constants from the Paper
@@ -74,8 +73,9 @@ hidespines!(ax3)
 
 #-------
 
-
-f = parametricFuncEnneper()
+umin, umax = 0, 2 * pi
+vmin, vmax = -pi/2 + 0.3,  pi/2 - 0.3
+f = parametricFuncIsothermicCatenoid()
 
 
 A = 1
@@ -100,10 +100,15 @@ N = 20
 x = LinRange(umin, umax, N)
 y = LinRange(vmin, vmax, N)
 
+save("f.obj", createParametricMesh(f, x, y))
+save("g1.obj", createParametricMesh(g1, x, y))
+save("g2.obj", createParametricMesh(g2, x, y))
+
+#=
 plotParametricWireframe(f, x, y, ax; color = (:black, 0.1), transparency = true)
 plotParametricWireframe(g1, x, y, ax2; color = (:black, 0.1), transparency = true)
 plotParametricWireframe(g2, x, y, ax3; color = (:black, 0.1), transparency = true)
-#=
+
 curvObs = lift(slider.value) do val
     points = [f(x_val, val) for x_val in x]
 end
@@ -121,4 +126,3 @@ curvObs_2 = lift(slider.value) do val
 end
 lines!(ax3, curvObs_2; color = (:blue, 1), linewidth = 4)
 =#
-save("output.png", fig)
