@@ -8,6 +8,7 @@ The specific example uses a tau-admissible reparametrization calculated numerica
 
 
 using GLMakie
+import Quaternions as Q
 
 include("../../Tools/ParametricSurfaceTools.jl")
 include("../../Tools/ParametricCurveTools.jl")
@@ -63,6 +64,7 @@ w = (v) -> C + (A / pi) * sin(v) - (A / (pi^2)) * cos(v) - (B / (2 * pi)) * sin(
 
 # Defining the axis calculation
 axis = (v) -> rhombicAxisCalculation(v, omega, tau)
+currentRotQuat = (v) -> numericallySolveRotation(w, axis)(v)
 
 f = isothermicCylinder(w, axis, omega, tau)
 
@@ -89,6 +91,19 @@ curvObs = lift(slider.value) do val
     points = [f(x_val, val) for x_val in x]
 end
 
+dir = Observable(Vec3f(0,0,0))
+lift(slider.value) do val
+    #Incorrect Scaling but quickly Figure out
+    dir[] = Q.imag_part(currentRotQuat(val) * Q.Quaternion(0, 1, 0, 0))
+end
+
 lines!(ax, curvObs; color = (:blue, 1), linewidth = 4)
+arrows3d!(ax, [(0, 0, 0)], dir; 
+color = (:black, 0.5),
+normalize = true, 
+tipradius = 0.01, 
+lengthscale = 5,
+shaftradius = 0.01)
+
 
 fig

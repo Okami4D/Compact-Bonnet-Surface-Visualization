@@ -34,31 +34,37 @@ hidedecorations!(axfstar)
 hidespines!(axfstar)
 
 # Surface definitions
-f = parametricFuncEnneper()
-fstar = generateDualSurface(f)
+a = 2
+gamma = (t) -> (a * cosh(t/a), a * sinh(t/a))
+f, maxS = parametricFuncIsothermicSurfaceofRevolution(gamma, (-pi, pi), nSamples = 40)
 
+print("Generating dual surface...\n")
+fstar = generateDualSurface(f)
+print("Dual surface generated.\n")
 # Parameter domain (Enneper)
-umin = -2
-umax = 2
-vmin = -2
-vmax = 2
+umin = -pi
+umax = pi
+vmin = -maxS
+vmax = maxS
 
 # Resolution parameters for surfaces
-res1 = 40
+res1 = 10
 u1 = LinRange(umin, umax, res1)
 v1 = LinRange(vmin, vmax, res1)
 
-res2 = 20
+res2 = 5
 u2 = LinRange(umin, umax, res2)
 v2 = LinRange(vmin, vmax, res2)
 
 # Plot surfaces (static)
+print("Plotting surfaces...\n")
 plotParametricSurface(f, u1, v1, axf)
+print("Surface f plotted.\n")
 plotParametricWireframe(fstar, u2, v2, axfstar; color = (:black, 0.10), transparency = true)
-
+print("Dual surface f* plotted.\n")
 # UI: sliders to control origin (fast updates only update lines on f)
-u_slider = Slider(fig[2, 1], range = umin:0.01:umax, startvalue = origin_u0, width = 500)
-v_slider = Slider(fig[3, 1], range = vmin:0.01:vmax, startvalue = origin_v0, width = 500)
+u_slider = Slider(fig[2, 1], range = umin:0.01:umax, startvalue = 0, width = 500)
+v_slider = Slider(fig[3, 1], range = vmin:0.01:vmax, startvalue = 0, width = 500)
 
 # Button to compute and show the corresponding lines on fstar (expensive)
 compute_button = Button(fig[4, 1])
@@ -66,15 +72,15 @@ status_label = Label(fig[4, 2], tellwidth = false)
 
 # Line geometry parameters
 # keep a single delta array starting at 0 so lines originate at the exact origin point
-line_length = (umax - umin) / 4
-lineSamples = 64
-lineDelta = LinRange(0.0, line_length, lineSamples)
+#line_length = (umax - umin) / 4
+#lineSamples = 64
+#lineDelta = LinRange(0.0, line_length, lineSamples)
 
 # Observables to keep track of plotted line objects so we can delete them when updating
 f_lines = Observable(Vector{Any}())      # stores the two plotted objects on axf
 fstar_lines = Observable(Vector{Any}())  # stores the two plotted objects on axfstar
 
-
+#=
 lineU = lift(u_slider.value, v_slider.value) do u0, v0
     [(u0 + delta, v0) for delta in lineDelta]
 end
@@ -92,7 +98,7 @@ end
 
 lines!(axf, FlineU; color = :red, linewidth = 2)
 lines!(axf, FlineV; color = :blue, linewidth = 2)
-
+=#
 
 # Button action: compute corresponding lines on fstar (expensive) and show them in one action
 on(compute_button.clicks) do _

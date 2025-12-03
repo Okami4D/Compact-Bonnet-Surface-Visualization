@@ -5,6 +5,8 @@ using Integrals
 using FileIO
 using MeshIO
 
+include("../Tools/ParametricCurveTools.jl")
+
 
 """
     plotParametricSurface(f, x, y; kwargs...)
@@ -442,4 +444,27 @@ function parametricFuncIsothermicCone(k)
         return (x, y, z)
     end
     return out
+end
+
+function parametricFuncIsothermicSurfaceofRevolution(gamma, domain; nSamples = 100)
+    reparam = reparametrizeCurve(gamma, domain, nSamples)
+    gamma_Arc = reparam[1]
+    out = (theta, psi) -> begin
+        r, z = gamma_Arc(psi)
+        x = r * cos(theta)
+        y = r * sin(theta)
+        return (x, y, z)
+    end
+    return out, reparam[2]
+end
+
+
+function parametricFuncModulatedTorus(modFunc, R)
+    return (phi, theta) -> begin
+        mod = modFunc(phi, theta)
+        x = ((R + mod * cos(theta)) * cos(phi))
+        y = ((R + mod * cos(theta)) * sin(phi))
+        z = mod * sin(theta)
+        return (x, y, z)
+    end
 end

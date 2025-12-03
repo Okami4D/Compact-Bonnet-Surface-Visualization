@@ -1,16 +1,35 @@
 using GLMakie
-using Roots
-using EllipticFunctions
-using ForwardDiff
-using FiniteDifferences
 using ArbNumerics
+using EllipticFunctions
+using Elliptic
+using PyCall
 
+include("../Tools/jacboiThetaExtension.jl")
 include("../Tools/ParametricSurfaceTools.jl")
 include("../Tools/ParametricCurveTools.jl")
 include("../Tools/isothermicCylinderTools.jl")
-include("../Tools/jacboiThetaExtension.jl")
 
-# Constants
+
+ArbNumerics.setprecision(64)
+
+function complex_step_derivative(f, x, h = 1e-20)
+    return imag(f(x + h * im)) / h
+end
+
+fig = Figure(size=(1200, 2400))
+axTop = Axis3(
+    fig[1, 1],
+    aspect = :equal, 
+    perspectiveness = 0.6
+)
+
+axBot = Axis3(
+    fig[2, 1],
+    aspect = :equal, 
+    perspectiveness = 0.6
+)
+
+
 tau = 0.5 + 0.3205128205 * im
 omega = findOmegaRhombic(tau)
 
@@ -19,10 +38,12 @@ s2 = 0.5655771591
 delta = 1.61245155
 
 
-umin = 0.1
-umax = 2 * pi
-vmin = 0.1
-vmax = 4 * pi
+
+n = 3
+res = 200
+
+realVals = LinRange(-n, n, res)
+imagVals = LinRange(-n, n, res)
 
 Q3 = (s) -> sphericalrhombicLinesQ3(tau)(s)
 Q3prime = (s) -> sphericalrhombicLinesQ3Prime(tau)(s)
@@ -39,6 +60,7 @@ QCurvePrime2 = (s) -> sphericalrhombicLinesQPrimePrime(s1, s2, delta, tau)(s)
 
 gQ = ellipticCurveInvariantsdeltaQ(s1, s2, delta, tau)
 hpQ = halfPeriods(gQ...)
+tauQ = hpQ[2] / hpQ[1]
 
 s1min = Roots.find_zero((s) -> real(QCurve(s)), s1 - delta)
 s1plu = Roots.find_zero((s) -> real(QCurve(s)), s2 + delta)
@@ -58,54 +80,36 @@ a3 = (s1min - s0)
 a4 = 1/4 * delta^(-2) * QCurvePrime(s1min) - (s1min - s0) * 1/24 * delta^(-2) * QCurvePrime2(s1min)
 
 function w(s)
-    wpval = weierstrass_p(ArbComplex(s), 2 * ArbComplex(hpQ3[1]), 2*  ArbComplex(hpQ3[2]))          # ℘(s)
+    wpval = weierstrass_p(ArbComplex(s), ArbComplex(hpQ3[1]), ArbComplex(hpQ3[2]))          # ℘(s)
     numerator   = a1 * wpval + a2
     denominator = a3 * wpval + a4
     z = ArbComplex(a0 + numerator / denominator)
 
-    return weierstrass_inv_p(z, 2* ArbComplex(hpQ[1]), 2 * ArbComplex(hpQ[2]))
+    return weierstrass_inv_p(z, ArbComplex(hpQ[1]), ArbComplex(hpQ[2]))
 end
 
-# wRaw = (s) -> begin
-#     output = Float64(imag(w(s)))
-#     if isnan(output)
-#         return 0
-#     end
-#     return output
-# end
-# dwFunc = (s) -> central_fdm(5, 1)(wRaw, s)
 
-# f = isothermicCylinder(wRaw, dwFunc, omega, tau)
-
-
-
-fig = Figure(size=(1200, 800))
-ax = Axis3(
-    fig[1, 1],
-    aspect=:data,
-    perspectiveness=0.6,
-    clip=false
-)
-ax2 = Axis(
-    fig[1, 2],
-    xlabel = "u",
-    ylabel = "w(u)",
-    title = "Weierstrass w-function along real axis"
+surface!(
+    axTop,
+    realVals,
+    imagVals,
+    (x, y) -> abs(Q3(x + im * y)),
+    colormap = :amp,
+    transparency = true
 )
 
-hidedecorations!(ax)
-hidespines!(ax)
 
-N = 200
+#wp(2z, omega = hpQ)
 
-x = LinRange(umin, umax, N)
-y = LinRange(vmin, vmax, N)
+surface!(
+    axBot,
+    realVals,
+    imagVals,
+    (x, y) -> abs(QCurve(x + im * y)),
+    colormap = :amp,
+    transparency = true
+)
 
-# plotParametricWireframe(f, x, y; color = (:black, 0.05), transparency = true)
-
-lines!(ax2, x, [real(w(u)) for u in x], color = :blue)
-lines!(ax2, x, [imag(w(u)) for u in x], color = :red)
 
 fig
-
 
