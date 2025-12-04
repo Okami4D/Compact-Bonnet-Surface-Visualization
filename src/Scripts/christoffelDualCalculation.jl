@@ -35,14 +35,18 @@ hidespines!(axfstar)
 
 # Surface definitions
 
-umin, umax = -pi,  pi
-vmin, vmax = -1, 1
-f = parametricFuncIsothermicHelicoid()
+
+gamma = (t) -> (0.5 * sin(4 * t) + 1, t)
+f, sMax = parametricFuncIsothermicSurfaceofRevolution(gamma, (0, 2*pi))
+
 
 fstar = generateDualSurface(f)
 
 # Resolution parameters for surfaces
-res1 = 50
+umin, umax = -1,  1
+vmin, vmax = 0, sMax
+
+res1 = 20
 u1 = LinRange(umin, umax, res1)
 v1 = LinRange(vmin, vmax, res1)
 
